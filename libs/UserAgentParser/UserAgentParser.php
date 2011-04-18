@@ -5,7 +5,7 @@
  *
  * @link http://dev.piwik.org/trac/browser/trunk/libs/UserAgentParser
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
- * @version $Id: UserAgentParser.php 3950 2011-02-20 04:58:59Z vipsoft $
+ * @version $Id: UserAgentParser.php 4485 2011-04-16 19:53:31Z vipsoft $
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -90,6 +90,9 @@ class UserAgentParser
 			'epiphany'						=> 'EP',
 			'fennec'						=> 'FE',
 
+			// Dolfin (or Dolphin)
+			'dolfin'						=> 'DF',
+
 			// Firefox (in its many incarnations and rebranded versions)
 			'phoenix'						=> 'PX',
 			'mozilla firebird'				=> 'FB',
@@ -160,7 +163,7 @@ class UserAgentParser
 			'ie'	 => array('IE'),
 			'gecko'  => array('NS', 'PX', 'FF', 'FB', 'CA', 'GA', 'KM', 'MO', 'SM', 'CO', 'FE', 'KP', 'KZ'),
 			'khtml'  => array('KO'),
-			'webkit' => array('SF', 'CH', 'OW', 'AR', 'EP', 'FL', 'WO', 'AN', 'AB', 'IR', 'CS', 'FD', 'HA', 'MI', 'GE'),
+			'webkit' => array('SF', 'CH', 'OW', 'AR', 'EP', 'FL', 'WO', 'AN', 'AB', 'IR', 'CS', 'FD', 'HA', 'MI', 'GE', 'DF'),
 			'opera'  => array('OP'),
 		);
 
@@ -200,6 +203,8 @@ class UserAgentParser
 			'Android'				=> 'AND',
 			'Maemo'					=> 'MAE',
 			'Linux'					=> 'LIN',
+
+			'WP7'					=> 'WP7',
 
 			'CYGWIN_NT-6.1'			=> 'WI7',
 			'Windows NT 6.1'		=> 'WI7',
@@ -259,6 +264,9 @@ class UserAgentParser
 			'SymbOS'				=> 'SYM',
 			'Symbian OS'			=> 'SYM',
 			'SymbianOS'				=> 'SYM',
+
+			'Bada'					=> 'SBA',
+			'bada'					=> 'SBA',
 
 			'SunOS'					=> 'SOS',
 			'AIX'					=> 'AIX',

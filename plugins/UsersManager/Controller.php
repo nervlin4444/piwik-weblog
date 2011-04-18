@@ -4,18 +4,17 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4024 2011-03-04 15:41:58Z vipsoft $
+ * @version $Id: Controller.php 4459 2011-04-15 00:47:11Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UsersManager
  */
 
-
 /**
  * 
  * @package Piwik_UsersManager
  */
-class Piwik_UsersManager_Controller extends Piwik_Controller
+class Piwik_UsersManager_Controller extends Piwik_Controller_Admin
 {
 	/**
 	 * The "Manage Users and Permissions" Admin UI screen
@@ -143,6 +142,10 @@ class Piwik_UsersManager_Controller extends Piwik_Controller
 		$view->availableDefaultDates = array(
 			'today' => Piwik_Translate('General_Today'),
 			'yesterday' => Piwik_Translate('General_Yesterday'),
+			'previous7' => Piwik_Translate('General_PreviousDays', 7),
+			'previous30' => Piwik_Translate('General_PreviousDays', 30),
+			'last7' => Piwik_Translate('General_LastDays', 7),
+			'last30' => Piwik_Translate('General_LastDays', 30),
 			'week' => Piwik_Translate('General_CurrentWeek'),
 			'month' => Piwik_Translate('General_CurrentMonth'),
 			'year' => Piwik_Translate('General_CurrentYear'),
@@ -167,7 +170,7 @@ class Piwik_UsersManager_Controller extends Piwik_Controller
 
 	/**
 	 * The Super User can modify Anonymous user settings
-	 * @param $view
+	 * @param Piwik_View $view
 	 */
 	protected function initViewAnonymousUserSettings($view)
 	{

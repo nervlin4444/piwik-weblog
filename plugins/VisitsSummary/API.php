@@ -4,14 +4,16 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3870 2011-02-12 13:34:53Z matt $
+ * @version $Id: API.php 4448 2011-04-14 08:20:49Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitsSummary
  */
 
 /**
- *
+ * VisitsSummary API lets you access the core web analytics metrics (visits, unique visitors, 
+ * count of actions (page views & downloads & clicks on outlinks), time on site, bounces and converted visits.
+ * 
  * @package Piwik_VisitsSummary
  */
 class Piwik_VisitsSummary_API 
@@ -63,6 +65,12 @@ class Piwik_VisitsSummary_API
 								'sum_visit_length',
 								'max_actions',
 							);
+			if(!Piwik::isUniqueVisitorsEnabled($period))
+			{
+				unset($columns[array_search('nb_uniq_visitors', $columns)]);
+			}
+			// Force reindex from 0 to N otherwise the SQL bind will fail
+			$columns = array_values($columns);
 		}
 
 		$dataTable = $archive->getDataTableFromNumeric($columns);

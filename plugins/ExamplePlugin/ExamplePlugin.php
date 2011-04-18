@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ExamplePlugin.php 3865 2011-02-11 20:17:47Z JulienM $
+ * @version $Id: ExamplePlugin.php 4421 2011-04-12 07:02:31Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_ExamplePlugin
@@ -62,7 +62,7 @@ class Piwik_ExamplePlugin extends Piwik_Plugin
 		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_exampleWidget', 'ExamplePlugin', 'exampleWidget');
 		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_blogPiwikRss', 'ExamplePlugin', 'blogPiwik');
 		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_photostreamMatt', 'ExamplePlugin', 'photostreamMatt');
-		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_piwikDownloads', 'ExamplePlugin', 'piwikDownloads');
+		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_piwikForumVisits', 'ExamplePlugin', 'piwikDownloads');
 	}
 }
 

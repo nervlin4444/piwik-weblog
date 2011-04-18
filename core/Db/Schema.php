@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Schema.php 3672 2011-01-08 23:26:57Z matt $
+ * @version $Id: Schema.php 4297 2011-04-03 19:31:58Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -258,7 +258,10 @@ class Piwik_Db_Schema
 }
 
 /**
+ * Database schema interface
+ *
  * @package Piwik
+ * @subpackage Piwik_Db
  */
 interface Piwik_Db_Schema_Interface
 {

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Tracker.php 3945 2011-02-19 17:45:55Z vipsoft $
+ * @version $Id: Tracker.php 4487 2011-04-16 23:41:47Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -43,6 +43,7 @@ class Piwik_Tracker
 	
 	static protected $forcedDateTime = null;
 	static protected $forcedIpString = null;
+	static protected $forcedVisitorId = null;
 	
 	static protected $pluginsNotToLoad = array();
 	
@@ -59,6 +60,11 @@ class Piwik_Tracker
 		self::$forcedDateTime = $dateTime;
 	}
 	
+	public static function setForceVisitorId($visitorId)
+	{
+		self::$forcedVisitorId = $visitorId;
+	}
+	
 	public function getCurrentTimestamp()
 	{
 		if(!is_null(self::$forcedDateTime))
@@ -70,17 +76,26 @@ class Piwik_Tracker
 
 	/**
 	 * Do not load the specified plugins (used during testing, to disable Provider plugin)
-	 * @param $plugins
+	 * @param array $plugins
 	 */
 	static public function setPluginsNotToLoad($plugins)
 	{
 		self::$pluginsNotToLoad = $plugins;
 	}
+
+	/**
+	 * Get list of plugins to not load
+	 *
+	 * @return array
+	 */
 	static public function getPluginsNotToLoad()
 	{
 		return self::$pluginsNotToLoad;
 	}
-	
+
+	/**
+	 * Main
+	 */
 	public function main()
 	{
 		$this->init();
@@ -109,14 +124,18 @@ class Piwik_Tracker
 
 	/**
 	 * Returns the date in the "Y-m-d H:i:s" PHP format
+	 *
+	 * @param int $timstamp
 	 * @return string
 	 */
 	public static function getDatetimeFromTimestamp($timestamp)
 	{
 		return date("Y-m-d H:i:s", $timestamp);
 	}
-	
-	
+
+	/**
+	 * Initialization
+	 */
 	protected function init()
 	{
 		$this->loadTrackerPlugins();
@@ -127,6 +146,9 @@ class Piwik_Tracker
 		printDebug("Current datetime: ".date("Y-m-d H:i:s", $this->getCurrentTimestamp()));
 	}
 
+	/**
+	 * Cleanup
+	 */
 	protected function end()
 	{
 		switch($this->getState())
@@ -247,6 +269,7 @@ class Piwik_Tracker
 		if(is_null($visit))
 		{
 			$visit = new Piwik_Tracker_Visit( self::$forcedIpString, self::$forcedDateTime );
+			$visit->setForcedVisitorId(self::$forcedVisitorId);
 		}
 		elseif(!($visit instanceof Piwik_Tracker_Visit_Interface ))
 		{
@@ -260,7 +283,8 @@ class Piwik_Tracker
 		if( !isset($GLOBALS['PIWIK_TRACKER_DEBUG']) || !$GLOBALS['PIWIK_TRACKER_DEBUG'] ) 
 		{
 			$trans_gif_64 = "R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
-			header("Content-Type: image/gif");
+			header('Content-Type: image/gif');
+			header('Access-Control-Allow-Origin: *');
 			print(base64_decode($trans_gif_64));
 		}
 	}
@@ -326,7 +350,7 @@ class Piwik_Tracker
 		}
 	}
 
-	protected function authenticateSuperUser()
+	protected function authenticateSuperUserOrAdmin()
 	{
 		$tokenAuth = Piwik_Common::getRequestVar('token_auth', false);
 
@@ -334,13 +358,25 @@ class Piwik_Tracker
 		{
 			$superUserLogin =  Piwik_Tracker_Config::getInstance()->superuser['login'];
 			$superUserPassword = Piwik_Tracker_Config::getInstance()->superuser['password'];
-
 			if( md5($superUserLogin . $superUserPassword ) == $tokenAuth )
 			{
 				return true;
 			}
+			
+			// Now checking the list of admin token_auth cached in the Tracker config file
+			$idSite = Piwik_Common::getRequestVar('idsite', false, 'int', $this->request);
+			if(!empty($idSite) 
+				&& $idSite > 0)
+			{
+				$website = Piwik_Common::getCacheWebsiteAttributes( $idSite );
+				$adminTokenAuth = $website['admin_token_auth'];
+				if(in_array($tokenAuth, $adminTokenAuth))
+				{
+					return true;
+				}
+			}
+			printDebug("token_auth = $tokenAuth - Warning: Super User / Admin was NOT authenticated");
 		}
-
 		return false;
 	}
 
@@ -350,25 +386,31 @@ class Piwik_Tracker
 	 */
 	protected function handleTrackingApi()
 	{
-		if(!$this->authenticateSuperUser())
+		if(!$this->authenticateSuperUserOrAdmin())
 		{
 			return;
 		}
-
+		printDebug("token_auth is authenticated!");
+	
 		// Custom IP to use for this visitor
-		$customIp = Piwik_Common::getRequestVar('cip', false);
-
+		$customIp = Piwik_Common::getRequestVar('cip', false, 'string', $this->request);
 		if(!empty($customIp))
 		{
 			$this->setForceIp($customIp);
 		}
-
+	
 		// Custom server date time to use
-		$customDatetime = Piwik_Common::getRequestVar('cdt', false);
-
+		$customDatetime = Piwik_Common::getRequestVar('cdt', false, 'string', $this->request);
 		if(!empty($customDatetime))
 		{
 			$this->setForceDateTime($customDatetime);
+		}
+		
+		// Forced Visitor ID to record the visit / action 
+		$customVisitorId = Piwik_Common::getRequestVar('cid', false, 'string', $this->request);
+		if(!empty($customVisitorId))
+		{
+			$this->setForceVisitorId($customVisitorId);
 		}
 	}
 }

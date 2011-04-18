@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Session.php 3772 2011-01-17 21:56:16Z vipsoft $
+ * @version $Id: Session.php 4297 2011-04-03 19:31:58Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -14,6 +14,7 @@
  * Session initialization.
  * 
  * @package Piwik
+ * @subpackage Piwik_Session
  */
 class Piwik_Session extends Zend_Session
 {

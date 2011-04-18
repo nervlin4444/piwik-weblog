@@ -81,7 +81,9 @@ if (!this.JSON2) {
     }
 
     var cx = new RegExp('[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]', 'g'),
-        escapable = new RegExp('[\\\\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]', 'g'),
+	// hack: workaround Snort false positive (sid 8443)
+        pattern = '\\\\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]',
+        escapable = new RegExp('[' + pattern, 'g'),
         gap,
         indent,
         meta = {    // table of character substitutions
@@ -375,15 +377,17 @@ if (!this.JSON2) {
 	event, which, button, srcElement, type, target,
 	parentNode, tagName, hostname, className,
 	userAgent, cookieEnabled, platform, mimeTypes, enabledPlugin, javaEnabled,
-	XMLHttpRequest, ActiveXObject, open, setRequestHeader, send,
+	XDomainRequest, XMLHttpRequest, ActiveXObject, open, setRequestHeader, send,
 	getTime, setTime, toGMTString, getHours, getMinutes, getSeconds,
-	toLowerCase, charAt, indexOf, split,
+	toLowerCase, charAt, indexOf, lastIndexOf, split, slice,
 	onLoad, src,
 	round, random,
 	exec,
 	res, width, height,
 	pdf, qt, realp, wma, dir, fla, java, gears, ag,
 	hook, getHook, getVisitorId, getVisitorInfo, setTrackerUrl, setSiteId,
+	getAttributionInfo, getAttributionCampaignName, getAttributionCampaignKeyword, 
+	getAttributionReferrerTimestamp, getAttributionReferrerUrl
 	setCustomData, getCustomData,
 	setCustomVariable, getCustomVariable, deleteCustomVariable,
 	setDownloadExtensions, addDownloadExtensions,
@@ -391,7 +395,7 @@ if (!this.JSON2) {
 	setReferrerUrl, setCustomUrl, setDocumentTitle,
 	setDownloadClasses, setLinkClasses,
 	discardHashTag,
-	setCookieNamePrefix, setCookieDomain, setCookiePath,
+	setCookieNamePrefix, setCookieDomain, setCookiePath, setVisitorIdCookie,
 	setVisitorCookieTimeout, setSessionCookieTimeout, setReferralCookieTimeout
 	setConversionAttributionFirstReferrer,
 	doNotTrack, setDoNotTrack,
@@ -636,6 +640,16 @@ var
 			}
 
 			return referrer;
+		}
+
+		/*
+		 * Extract scheme/protocol from URL
+		 */
+		function getProtocolScheme(url) {
+			var e = new RegExp('^([a-z]+):'),
+				matches = e.exec(url);
+
+			return matches ? matches[1] : null;
 		}
 
 		/*
@@ -976,12 +990,18 @@ var
 
 				// Life of the referral cookie (in milliseconds)
 				configReferralCookieTimeout = 15768000000, // 6 months
+				
+				// Should cookies have the secure flag set
+				cookieSecure = documentAlias.location.protocol === 'https',
 
 				// Custom Variables read from cookie
 				customVariables = false,
 
 				// Custom Variables names and values are each truncated before being sent in the request or recorded in the cookie
 				customVariableMaximumLength = 100,
+
+				// Maximum number of custom variables
+				maxCustomVariables = 5,
 
 				// Browser features via client-side data collection
 				browserFeatures = {},
@@ -1003,19 +1023,53 @@ var
 				hash = sha1,
 
 				// Domain hash value
-				domainHash;
+				domainHash,
+
+				// Visitor UUID
+				visitorUUID;
 
 			/*
-			 * Purify URL.
+			 * Removes hash tag from the URL
+			 * 
+			 * URLs are purified before being recorded in the cookie,
+			 * or before being sent as GET parameters
 			 */
-			function purify(str) {
+			function purify(url) {
 				var targetPattern;
 
 				if (configDiscardHashTag) {
 					targetPattern = new RegExp('#.*');
-					return str.replace(targetPattern, '');
+					return url.replace(targetPattern, '');
 				}
-				return str;
+				return url;
+			}
+
+			/*
+			 * Resolve relative reference
+			 *
+			 * Note: not as described in rfc3986 section 5.2
+			 */
+			function resolveRelativeReference(baseUrl, url) {
+				var protocol = getProtocolScheme(url),
+					i;
+
+				if (protocol) {
+					return url;
+				}
+
+				if (url.slice(0, 1) === '/') {
+					return getProtocolScheme(baseUrl) + '://' + getHostName(baseUrl) + url;
+				}
+
+				baseUrl = purify(baseUrl);
+				if ((i = baseUrl.indexOf('?')) >= 0) {
+					baseUrl = baseUrl.slice(0, i);
+				}
+				if ((i = baseUrl.lastIndexOf('/')) !== baseUrl.length - 1) {
+					baseUrl = baseUrl.slice(0, i + 1);
+				}
+
+				return baseUrl + url;
 			}
 
 			/*
@@ -1066,7 +1120,8 @@ var
 					// we use the progid Microsoft.XMLHTTP because
 					// IE5.5 included MSXML 2.5; the progid MSXML2.XMLHTTP
 					// is pinned to MSXML2.XMLHTTP.3.0
-					var xhr = windowAlias.XMLHttpRequest ? new windowAlias.XMLHttpRequest() :
+					var xhr = windowAlias.XDomainRequest ? new windowAlias.XDomainRequest() :
+						windowAlias.XMLHttpRequest ? new windowAlias.XMLHttpRequest() :
 						windowAlias.ActiveXObject ? new ActiveXObject('Microsoft.XMLHTTP') :
 						null;
 
@@ -1103,6 +1158,8 @@ var
 			 * Get cookie name with prefix and domain hash
 			 */
 			function getCookieName(baseName) {
+				// NOTE: If the cookie name is changed, we must also update the PiwikTracker.php which 
+				// will attempt to discover first party cookies. eg. See the PHP Client method getVisitorId() 
 				return configCookieNamePrefix + baseName + '.' + configTrackerSiteId + '.' + domainHash;
 			}
 
@@ -1163,9 +1220,17 @@ var
 			}
 
 			/*
+			 * Sets the Visitor ID cookie: either the first time loadVisitorIdCookie is called
+			 * or when there is a new visit or a new page view 
+			 */
+			function setVisitorIdCookie(uuid, createTs, visitCount, nowTs, lastVisitTs) {
+				  setCookie(getCookieName('id'), uuid + '.' + createTs + '.' + visitCount + '.' + nowTs + '.' + lastVisitTs, configVisitorCookieTimeout, configCookiePath, configCookieDomain, cookieSecure);
+			}
+			
+			/*
 			 * Load visitor ID cookie
 			 */
-			function loadVisitorId() {
+			function loadVisitorIdCookie() {
 				var now = new Date(),
 					nowTs = Math.round(now.getTime() / 1000),
 					id = getCookie(getCookieName('id')),
@@ -1174,20 +1239,25 @@ var
 				if (id) {
 					tmpContainer = id.split('.');
 
-					// returning visitor
+					// returning visitor flag
 					tmpContainer.unshift('0');
 				} else {
+					// uuid - generate a pseudo-unique ID to fingerprint this user;
+					// note: this isn't a RFC4122-compliant UUID
+					if (!visitorUUID) {
+						visitorUUID = hash(
+								(navigatorAlias.userAgent || '') +
+								(navigatorAlias.platform || '') +
+								JSON2.stringify(browserFeatures) + nowTs
+							).slice(0, 16); // 16 hexits = 64 bits
+					}
+
 					tmpContainer = [
 						// new visitor
 						'1',
 
-						// uuid - generate a pseudo-unique ID to fingerprint this user;
-						// note: this isn't a RFC4122-compliant UUID
-						hash(
-							(navigatorAlias.userAgent || '') +
-								(navigatorAlias.platform || '') +
-								JSON2.stringify(browserFeatures) + nowTs
-						).slice(0, 16), // 16 hexits = 64 bits
+						// uuid
+						visitorUUID,
 
 						// creation timestamp - seconds since Unix epoch
 						nowTs,
@@ -1202,10 +1272,42 @@ var
 						''
 					];
 				}
-
 				return tmpContainer;
 			}
+			
+			/*
+			 * Loads the referrer attribution information
+			 * 
+			 * @returns array
+			 *  0: campaign name
+			 *  1: campaign keyword
+			 *  2: timestamp
+			 *  3: raw URL
+			 */
+			function loadReferrerAttributionCookie() {
+				// NOTE: if the format of the cookie changes,
+				// we must also update JS tests, PHP tracker, Integration tests, 
+				// and notify other tracking clients (eg. Java) of the changes
+				var cookie = getCookie(getCookieName('ref'));
 
+				if (cookie.length) {
+					try {
+						cookie = JSON2.parse(cookie);
+						if (isObject(cookie)) {
+							return cookie;
+						}
+					} catch (err) {
+						// Pre 1.3, this cookie was not JSON encoded
+					}
+				}
+				return [
+					    '',
+					    '',
+					    0,
+					    ''
+				];
+			}
+			
 			/*
 			 * Returns the URL to call piwik.php,
 			 * with the standard parameters (plugins, resolution, url, referrer, etc.).
@@ -1215,7 +1317,6 @@ var
 				var i,
 					now = new Date(),
 					nowTs = Math.round(now.getTime() / 1000),
-					tmpPos,
 					newVisitor,
 					uuid,
 					visitCount,
@@ -1232,10 +1333,14 @@ var
 					sesname = getCookieName('ses'),
 					refname = getCookieName('ref'),
 					cvarname = getCookieName('cvar'),
-					id = loadVisitorId(),
+					id = loadVisitorIdCookie(),
 					ses = getCookie(sesname),
-					ref = getCookie(refname),
-					secure = documentAlias.location.protocol === 'https';
+					attributionCookie = loadReferrerAttributionCookie(),
+					currentUrl = configCustomUrl || locationHrefAlias,
+					campaignNameParameters = [ 'piwik_campaign', 'utm_campaign' ],
+					campaignKeywordParameters = [ 'piwik_kwd', 'utm_term' ],
+					campaignNameDetected,
+					campaignKeywordDetected;
 
 				if (configDoNotTrack) {
 					setCookie(idname, '', -1, configCookiePath, configCookieDomain);
@@ -1252,36 +1357,65 @@ var
 				currentVisitTs = id[4];
 				lastVisitTs = id[5];
 
-				if (ref) {
-					tmpPos = ref.indexOf('.');
-					referralTs = ref.slice(0, tmpPos);
-					referralUrl = ref.slice(tmpPos + 1);
-				} else {
-					referralTs = 0;
-					referralUrl = '';
-				}
-
+				campaignNameDetected = attributionCookie[0];
+				campaignKeywordDetected = attributionCookie[1];
+				referralTs = attributionCookie[2];
+				referralUrl = attributionCookie[3];
+				
 				if (!ses) {
 					// new session (aka new visit)
 					visitCount++;
 
 					lastVisitTs = currentVisitTs;
 
+					// Detect the campaign information from the current URL
+					// Only if campaign wasn't previously set
+					// Or if it was set but we must attribute to the most recent one
+					// Note: we are working on the currentUrl before purify() since we can parse the campaign parameters in the hash tag
+					if(!configConversionAttributionFirstReferrer
+							|| !campaignNameDetected.length) {
+						for( i in campaignNameParameters) {
+							if (Object.prototype.hasOwnProperty.call(campaignNameParameters, i)) {
+								campaignNameDetected = getParameter(currentUrl, campaignNameParameters[i]);
+								if(campaignNameDetected.length) {
+									break;
+								}
+							}
+						}
+						for( i in campaignKeywordParameters) {
+							if (Object.prototype.hasOwnProperty.call(campaignKeywordParameters, i)) {
+								campaignKeywordDetected = getParameter(currentUrl, campaignKeywordParameters[i]);
+								if(campaignKeywordDetected.length) {
+									break;
+								}
+							}
+						}
+					}
+					
 					// Store the referrer URL and time in the cookie;
 					// referral URL depends on the first or last referrer attribution
 					currentReferrerHostName = getHostName(configReferrerUrl);
-					originalReferrerHostName = ref ? getHostName(ref) : '';
+					originalReferrerHostName = referralUrl.length ? getHostName(referralUrl) : '';
 					if (currentReferrerHostName.length && // there is a referrer
 							!isSiteHostName(currentReferrerHostName) && // domain is not the current domain
 							(!configConversionAttributionFirstReferrer || // attribute to last known referrer
 							!originalReferrerHostName.length || // previously empty
 							isSiteHostName(originalReferrerHostName))) { // previously set but in current domain
-						// record this referral
-						referralTs = nowTs;
 						referralUrl = configReferrerUrl;
-
-						// set the referral cookie
-						setCookie(refname, referralTs + '.' + referralUrl.slice(0, referralUrlMaxLength), configReferralCookieTimeout, configCookiePath, configCookieDomain, secure);
+					}
+					
+					// Set the referral cookie if we have either a Referrer URL, or detected a Campaign (or both)
+					if(referralUrl.length
+							|| campaignNameDetected.length) {
+						referralTs = nowTs;
+						attributionCookie = [
+							campaignNameDetected,
+							campaignKeywordDetected,
+							referralTs,
+							purify(referralUrl.slice(0, referralUrlMaxLength))
+						];
+						
+						setCookie(refname, JSON2.stringify(attributionCookie), configReferralCookieTimeout, configCookiePath, configCookieDomain, cookieSecure);
 					}
 				}
 
@@ -1290,12 +1424,16 @@ var
 					'&rec=1' +
 					'&rand=' + Math.random() +
 					'&h=' + now.getHours() + '&m=' + now.getMinutes() + '&s=' + now.getSeconds() +
-					'&url=' + encodeWrapper(purify(configCustomUrl || locationHrefAlias)) +
+					'&url=' + encodeWrapper(purify(currentUrl)) +
 					'&urlref=' + encodeWrapper(purify(configReferrerUrl)) +
-					'&_id=' + uuid + '&_idts=' + createTs + '&_idvc=' + visitCount + '&_idn=' + newVisitor +
-					'&_ref=' + encodeWrapper(purify(referralUrl.slice(0, referralUrlMaxLength))) +
+					'&_id=' + uuid + '&_idts=' + createTs + '&_idvc=' + visitCount + 
+					'&_idn=' + newVisitor + // currently unused
+					'&_rcn=' + encodeWrapper(campaignNameDetected) +
+					'&_rck=' + encodeWrapper(campaignKeywordDetected) +
 					'&_refts=' + referralTs +
-					'&_viewts=' + lastVisitTs;
+					'&_viewts=' + lastVisitTs +
+					'&_ref=' + encodeWrapper(purify(referralUrl.slice(0, referralUrlMaxLength)))
+				;
 
 				// browser features
 				for (i in browserFeatures) {
@@ -1324,12 +1462,12 @@ var
 						}
 					}
 
-					setCookie(cvarname, JSON2.stringify(customVariables), configSessionCookieTimeout, configCookiePath, configCookieDomain, secure);
+					setCookie(cvarname, JSON2.stringify(customVariables), configSessionCookieTimeout, configCookiePath, configCookieDomain, cookieSecure);
 				}
 
 				// update cookies
-				setCookie(idname, uuid + '.' + createTs + '.' + visitCount + '.' + nowTs + '.' + lastVisitTs, configVisitorCookieTimeout, configCookiePath, configCookieDomain, secure);
-				setCookie(sesname, '*', configSessionCookieTimeout, configCookiePath, configCookieDomain, secure);
+				setVisitorIdCookie(uuid, createTs, visitCount, nowTs, lastVisitTs);
+				setCookie(sesname, '*', configSessionCookieTimeout, configCookiePath, configCookieDomain, cookieSecure);
 
 				// tracker plugin hook
 				request += executePluginMethod(pluginMethod);
@@ -1373,7 +1511,7 @@ var
 							request;
 
 						// there was activity during the heart beat period;
-						// on average, this is going to overstate the visitLength by configHeartBeatTimer/2
+						// on average, this is going to overstate the visitDuration by configHeartBeatTimer/2
 						if ((lastActivityTime + configHeartBeatTimer) > now.getTime()) {
 							// send ping if minimum visit time has elapsed
 							if (configMinimumVisitTime < now.getTime()) {
@@ -1394,12 +1532,7 @@ var
 			 * Log the goal with the server
 			 */
 			function logGoal(idGoal, customRevenue, customData) {
-				var request = getRequest('idgoal=' + idGoal, customData, 'goal');
-
-				// custom revenue
-				if (customRevenue) {
-					request += '&revenue=' + customRevenue;
-				}
+				var request = getRequest('idgoal=' + idGoal + (customRevenue ? '&revenue=' + customRevenue : ''), customData, 'goal');
 
 				sendRequest(request, configTrackerPause);
 			}
@@ -1682,7 +1815,7 @@ var
 				 * @return string Visitor ID in hexits (or null, if not yet known)
 				 */
 				getVisitorId: function () {
-					return (loadVisitorId())[1];
+					return (loadVisitorIdCookie())[1];
 				},
 
 				/**
@@ -1691,9 +1824,61 @@ var
 				 * @return array
 				 */
 				getVisitorInfo: function() {
-					return loadVisitorId();
+					return loadVisitorIdCookie();
 				},
 
+				/**
+				 * Get the Attribution information, which is an array that contains 
+				 * the Referrer used to reach the site as well as the campaign name and keyword
+				 * It is useful only when used in conjunction with Tracker API function setAttributionInfo() 
+				 * To access specific data point, you should use the other functions getAttributionReferrer* and getAttributionCampaign*
+				 * 
+				 * @return array Attribution array, Example use:
+				 *               1) Call JSON2.stringify(piwikTracker.getAttributionInfo()) 
+				 *               2) Pass this json encoded string to the Tracking API (php or java client): setAttributionInfo()
+				 */
+				getAttributionInfo: function() {
+					return loadReferrerAttributionCookie();
+				},
+				
+				/**
+				 * Get the Campaign name that was parsed from the landing page URL when the visitor 
+				 * landed on the site originally
+				 * 
+				 * @return string
+				 */
+				getAttributionCampaignName: function() {
+					return loadReferrerAttributionCookie()[0];
+				},
+				
+				/**
+				 * Get the Campaign keyword that was parsed from the landing page URL when the visitor 
+				 * landed on the site originally
+				 * 
+				 * @return string
+				 */
+				getAttributionCampaignKeyword: function() {
+					return loadReferrerAttributionCookie()[1];
+				},
+
+				/**
+				 * Get the time at which the referrer (used for Goal Attribution) was detected
+				 * 
+				 * @return int Timestamp or 0 if no referrer currently set
+				 */
+				getAttributionReferrerTimestamp: function() {
+					return loadReferrerAttributionCookie()[2];
+				},
+				
+				/**
+				 * Get the full referrer URL that will be used for Goal Attribution
+				 * 
+				 * @return string Raw URL, or empty string '' if no referrer currently set
+				 */
+				getAttributionReferrerUrl: function() {
+					return loadReferrerAttributionCookie()[3];
+				},
+				
 				/**
 				 * Specify the Piwik server URL
 				 *
@@ -1751,7 +1936,7 @@ var
 				 */
 				setCustomVariable: function (index, name, value) {
 					loadCustomVariables();
-					if (index > 0 && index <= 5) {
+					if (index > 0 && index <= maxCustomVariables) {
 						customVariables[index] = [name.slice(0, customVariableMaximumLength), value.slice(0, customVariableMaximumLength)];
 					}
 				},
@@ -1854,7 +2039,7 @@ var
 				 * @param string url
 				 */
 				setCustomUrl: function (url) {
-					configCustomUrl = url;
+					configCustomUrl = resolveRelativeReference(locationHrefAlias, url);
 				},
 
 				/**
@@ -1952,9 +2137,10 @@ var
 				},
 
 				/**
-				 * Set conversion attribution to first referrer
+				 * Set conversion attribution to first referrer and campaign
 				 *
-				 * @param bool enable If true, use first referrer; if false, use the last referrer
+				 * @param bool if true, use first referrer (and first campaign)
+				 *             if false, use the last referrer (or campaign)
 				 */
 				setConversionAttributionFirstReferrer: function (enable) {
 					configConversionAttributionFirstReferrer = enable;

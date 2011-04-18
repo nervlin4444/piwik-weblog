@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: GoalManager.php 3946 2011-02-19 18:13:23Z vipsoft $
+ * @version $Id: GoalManager.php 4436 2011-04-13 22:21:55Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -61,6 +61,10 @@ class Piwik_Tracker_GoalManager
 		return Piwik_PluginsManager::getInstance()->isPluginActivated('Goals');
 	}
 
+	/**
+	 * @param int $idSite
+	 * @param Piwik_Tracker_Action $action
+	 */
 	function detectGoalsMatchingUrl($idSite, $action)
 	{
 		if(!$this->isGoalPluginEnabled())
@@ -68,14 +72,15 @@ class Piwik_Tracker_GoalManager
 			return false;
 		}
 		$sanitizedUrl = $action->getActionUrl();
-		$url = htmlspecialchars_decode($sanitizedUrl);
+		$decodedUrl = htmlspecialchars_decode($sanitizedUrl);
+		
 		$actionType = $action->getActionType();
 		$goals = $this->getGoalDefinitions($idSite);
 		foreach($goals as $goal)
 		{
 			$attribute = $goal['match_attribute'];
 			// if the attribute to match is not the type of the current action
-			if(		($actionType == Piwik_Tracker_Action::TYPE_ACTION_URL && $attribute != 'url')
+			if(		($actionType == Piwik_Tracker_Action::TYPE_ACTION_URL && $attribute != 'url' && $attribute != 'title')
 				||	($actionType == Piwik_Tracker_Action::TYPE_DOWNLOAD && $attribute != 'file')
 				||	($actionType == Piwik_Tracker_Action::TYPE_OUTLINK && $attribute != 'external_website')
 				||	($attribute == 'manually')
@@ -83,7 +88,13 @@ class Piwik_Tracker_GoalManager
 			{
 				continue;
 			}
-
+			
+			$url = $decodedUrl;
+			// Matching on Page Title
+			if($attribute == 'title')
+			{
+				$url = $action->getActionName();
+			}
 			$pattern_type = $goal['pattern_type'];
 
 			switch($pattern_type)
@@ -158,7 +169,7 @@ class Piwik_Tracker_GoalManager
 		return true;
 	}
 
-	function recordGoals($idSite, $visitorInformation, $visitCustomVariables, $action, $refererTimestamp, $refererUrl)
+	function recordGoals($idSite, $visitorInformation, $visitCustomVariables, $action, $referrerTimestamp, $referrerUrl, $referrerCampaignName, $referrerCampaignKeyword)
 	{
 		$location_country = isset($visitorInformation['location_country']) 
 							? $visitorInformation['location_country'] 
@@ -171,9 +182,6 @@ class Piwik_Tracker_GoalManager
 								? $visitorInformation['location_continent'] 
 								: Piwik_Common::getContinent($location_country);
 
-		$referrer = new Piwik_Tracker_Visit_Referer(); 
-		$referrer = $referrer->getRefererInformation($refererUrl, $currentUrl = '', $idSite);
-		
 		$goal = array(
 			'idvisit' 			=> $visitorInformation['idvisit'],
 			'idsite' 			=> $idSite,
@@ -185,22 +193,50 @@ class Piwik_Tracker_GoalManager
 			'visitor_days_since_first' => $visitorInformation['visitor_days_since_first'],
 			'visitor_count_visits' => $visitorInformation['visitor_count_visits'],
 		
-			'referer_visit_server_date' => date("Y-m-d", $refererTimestamp),
-			'referer_type' 				=> $referrer['referer_type'],
 		);
 
-		$goalData = array(
-			'referer_name' 				=> $referrer['referer_name'],
-			'referer_keyword' 			=> $referrer['referer_keyword'],
-		);
+		// Attributing the correct Referrer to this conversion. 
+		// Priority order is as follows:
+		// 1) Campaign name/kwd parsed in the JS
+		// 2) Referrer URL stored in the _ref cookie
+		// 3) If no info from the cookie, attribute to the current visit referrer
 		
-		// Ref Cookie only lasts 6 months by default, 
-		// so we shouldn't see anything older than 1 year
-		if($refererTimestamp > Piwik_Tracker::getCurrentTimestamp() - 365 * 86400 * 2
-			&& $refererTimestamp <=  Piwik_Tracker::getCurrentTimestamp())
+		// 3) Default values: current referrer
+        $type = $visitorInformation['referer_type'];
+        $name = $visitorInformation['referer_name'];
+        $keyword = $visitorInformation['referer_keyword'];
+        $time = $visitorInformation['visit_first_action_time'];
+        
+        // 1) Campaigns from 1st party cookie
+		if(!empty($referrerCampaignName))
 		{
-			$goal += $goalData;
+			$type = Piwik_Common::REFERER_TYPE_CAMPAIGN;
+			$name = $referrerCampaignName;
+			$keyword = $referrerCampaignKeyword;
+			$time = $referrerTimestamp;
 		}
+		// 2) Referrer URL parsing
+		elseif(!empty($referrerUrl))
+		{
+			$referrer = new Piwik_Tracker_Visit_Referer();  
+            $referrer = $referrer->getRefererInformation($referrerUrl, $currentUrl = '', $idSite);
+            
+            // if the parsed referer is interesting enough, ie. website or search engine 
+            if(in_array($referrer['referer_type'], array(Piwik_Common::REFERER_TYPE_SEARCH_ENGINE, Piwik_Common::REFERER_TYPE_WEBSITE)))
+            {
+            	$type = $referrer['referer_type'];
+            	$name = $referrer['referer_name'];
+            	$keyword = $referrer['referer_keyword'];
+				$time = $referrerTimestamp;
+            }
+		}
+		$goal += array(
+			'referer_type' 				=> $type,
+			'referer_name' 				=> $name,
+			'referer_keyword' 			=> $keyword,
+			// this field is currently unused
+			'referer_visit_server_date' => date("Y-m-d", $time),
+		);
 
 		$goal += $visitCustomVariables;
 		
@@ -211,12 +247,17 @@ class Piwik_Tracker_GoalManager
 			$newGoal['idgoal'] = $convertedGoal['idgoal'];
 			$newGoal['url'] = $convertedGoal['url'];
 			$newGoal['revenue'] = $convertedGoal['revenue'];
+			
 			if(!is_null($action))
 			{
 				$newGoal['idaction_url'] = $action->getIdActionUrl();
 				$newGoal['idlink_va'] = $action->getIdLinkVisitAction();
 			}
 
+			// If multiple Goal conversions per visit, set a cache buster 
+			$newGoal['buster'] = $convertedGoal['allow_multiple'] == 0 
+										? '0' 
+										: $visitorInformation['visit_last_action_time'];
 			$newGoalDebug = $newGoal;
 			$newGoalDebug['idvisitor'] = bin2hex($newGoalDebug['idvisitor']);
 			printDebug($newGoalDebug);
@@ -224,22 +265,10 @@ class Piwik_Tracker_GoalManager
 			$fields = implode(", ", array_keys($newGoal));
 			$bindFields = substr(str_repeat( "?,",count($newGoal)),0,-1);
 			
-			try {
-				$sql = "INSERT IGNORE INTO " . Piwik_Common::prefixTable('log_conversion') . "	
-						($fields) VALUES ($bindFields) ";
-				$bind = array_values($newGoal);
-				Piwik_Tracker::getDatabase()->query($sql, $bind);
-			} catch( Exception $e) {
-				if(Piwik_Tracker::getDatabase()->isErrNo($e, '1062'))
-				{
-					// integrity violation when same visit converts to the same goal twice
-					printDebug("--&gt; Goal already recorded for this (idvisit, idgoal)");
-				}
-				else
-				{
-					throw $e;
-				}
-			}
+			$sql = "INSERT IGNORE INTO " . Piwik_Common::prefixTable('log_conversion') . "	
+					($fields) VALUES ($bindFields) ";
+			$bind = array_values($newGoal);
+			Piwik_Tracker::getDatabase()->query($sql, $bind);
 		}
 	}
 }

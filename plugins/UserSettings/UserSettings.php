@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: UserSettings.php 3870 2011-02-12 13:34:53Z matt $
+ * @version $Id: UserSettings.php 4392 2011-04-11 00:55:30Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UserSettings
@@ -74,7 +74,12 @@ class Piwik_UserSettings extends Piwik_Plugin
 				'config_browser_version',
 				'1.0, 8.0, etc.',),
 		
-		
+		array( 'UserSettings_VisitorSettings', 
+				'UserSettings_WidgetBrowserFamilies', 
+				'UserSettings', 
+				'getBrowserType', 
+				'UserSettings_ColumnBrowserFamily'),
+
 		array( 	'UserSettings_VisitorSettings', 
     			'UserSettings_WidgetPlugins', 
     			'UserSettings', 
@@ -86,12 +91,6 @@ class Piwik_UserSettings extends Piwik_Plugin
 				'UserSettings', 
 				'getWideScreen', 
 				'UserSettings_ColumnTypeOfScreen'),
-		
-		array( 'UserSettings_VisitorSettings', 
-				'UserSettings_WidgetBrowserFamilies', 
-				'UserSettings', 
-				'getBrowserType', 
-				'UserSettings_ColumnBrowserFamily'),
 		
 		array( 'UserSettings_VisitorSettings', 
 				'UserSettings_WidgetOperatingSystems', 
@@ -127,11 +126,14 @@ class Piwik_UserSettings extends Piwik_Plugin
 
 	/*
 	 * Registers reports metadata
+	 *
+	 * @param Piwik_Event_Notification $notification
 	 */
 	public function getReportMetadata($notification) 
 	{
 		$reports = &$notification->getNotificationObject();
 		
+		$i = 0;
 		foreach($this->reportMetadata as $report)
 		{
 			list( $category, $name, $apiModule, $apiAction, $columnName ) = $report;
@@ -143,6 +145,7 @@ class Piwik_UserSettings extends Piwik_Plugin
     			'module' => $apiModule,
     			'action' => $apiAction,
     			'dimension' => Piwik_Translate($columnName),
+    			'order' => $i++,
     		);
     		
     		// getPlugin returns only a subset of metrics
@@ -159,6 +162,11 @@ class Piwik_UserSettings extends Piwik_Plugin
 		}
 	}
 
+	/**
+	 * Get segments meta data
+	 *
+	 * @param Piwik_Event_Notification $notification
+	 */
 	public function getSegmentsMetadata($notification)
 	{
 		$segments =& $notification->getNotificationObject();
@@ -205,7 +213,7 @@ class Piwik_UserSettings extends Piwik_Plugin
 	 * by Browser, Browser family, etc. Some reports are built from the logs, some reports 
 	 * are superset of an existing report (eg. Browser family is built from the Browser report)
 	 * 
-	 * @param $notification
+	 * @param Piwik_Event_Notification $notification
 	 * @return void
 	 */
 	function archiveDay( $notification )
@@ -267,7 +275,8 @@ class Piwik_UserSettings extends Piwik_Plugin
 	
 	/**
 	 * Period archiving: simply sums up daily archives
-	 * @param $notification
+	 *
+	 * @param Piwik_Event_Notification $notification
 	 * @return void
 	 */
 	function archivePeriod( $notification )
@@ -294,7 +303,7 @@ class Piwik_UserSettings extends Piwik_Plugin
 	/**
 	 * Returns the report Visits by Screen type given the Resolution table
 	 * 
-	 * @param $tableResolution 
+	 * @param Piwik_DataTable $tableResolution 
 	 * @return Piwik_DataTable
 	 */
 	protected function getTableWideScreen(Piwik_DataTable $tableResolution)
@@ -321,7 +330,7 @@ class Piwik_UserSettings extends Piwik_Plugin
 	/**
 	 * Returns the report Visits by Browser family given the Browser report
 	 * 
-	 * @param $tableBrowser 
+	 * @param Piwik_DataTable $tableBrowser 
 	 * @return Piwik_DataTable
 	 */
 	protected function getTableBrowserByType(Piwik_DataTable $tableBrowser)
@@ -346,6 +355,7 @@ class Piwik_UserSettings extends Piwik_Plugin
 	
 	/**
 	 * Returns SQL that processes stats for Plugins
+	 *
 	 * @return unknown_type
 	 */
 	protected function getDataTablePlugin()

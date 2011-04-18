@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4003 2011-03-03 14:32:58Z vipsoft $
+ * @version $Id: Controller.php 4361 2011-04-07 19:08:13Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_CoreUpdater
@@ -297,9 +297,7 @@ class Piwik_CoreUpdater_Controller extends Piwik_Controller
 			}
 			$this->warningMessages = array_merge($this->warningMessages, array_slice($integrityInfo, 1));
 		}
-
-		Piwik_AssetManager::removeMergedAssets();
-		Piwik_View::clearCompiledTemplates();
+		Piwik::deleteAllCacheOnUpdate();
 
 		$view->coreError = $this->coreError;
 		$view->warningMessages = $this->warningMessages;
@@ -314,8 +312,7 @@ class Piwik_CoreUpdater_Controller extends Piwik_Controller
 	{
 		$this->loadAndExecuteUpdateFiles($updater, $componentsWithUpdateFile);
 
-		Piwik_AssetManager::removeMergedAssets();
-		Piwik_View::clearCompiledTemplates();
+		Piwik::deleteAllCacheOnUpdate();
 
 		$view->coreError = $this->coreError;
 		$view->warningMessages = $this->warningMessages;

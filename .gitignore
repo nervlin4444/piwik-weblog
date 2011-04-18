@@ -1,0 +1,5 @@
+.buildpath
+.project
+.settings/*
+tmp/*
+config/config.ini.php

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ViewDataTable.php 3922 2011-02-17 07:30:40Z matt $
+ * @version $Id: ViewDataTable.php 4311 2011-04-04 18:49:55Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -363,7 +363,7 @@ abstract class Piwik_ViewDataTable
 	 * The requested Piwik_DataTable object is stored in $this->dataTable.
 	 */
 	protected function loadDataTableFromAPI()
-	{		
+	{
 		// we build the request string (URL) to call the API
 		$requestString = $this->getRequestString();
 		
@@ -397,7 +397,7 @@ abstract class Piwik_ViewDataTable
 	{
 		if(empty($this->dataTable))
 		{
-			return;
+			return false;
 		}
 		// First, filters that delete rows 
 		foreach($this->queuedFiltersPriority as $filter)
@@ -858,7 +858,7 @@ abstract class Piwik_ViewDataTable
 	/**
 	 * Will display a message in the DataTable footer. 
 	 * 
-	 * @param $message String
+	 * @param string $message Message
 	 */
 	public function setFooterMessage( $message )
 	{
@@ -913,7 +913,7 @@ abstract class Piwik_ViewDataTable
 	{
 		if( isset($this->columnsTranslations[$columnName]) )
 		{
-			return html_entity_decode($this->columnsTranslations[$columnName], ENT_COMPAT, 'UTF-8');
+			return $this->columnsTranslations[$columnName];
 		}
 		return $columnName;
 	}
@@ -926,7 +926,7 @@ abstract class Piwik_ViewDataTable
 	{
 		if( !empty($this->columnsDescriptions[$columnName]) )
 		{
-			return html_entity_decode($this->columnsDescriptions[$columnName], ENT_COMPAT, 'UTF-8');
+			return $this->columnsDescriptions[$columnName];
 		}
 		return false;
 	}
@@ -999,9 +999,9 @@ abstract class Piwik_ViewDataTable
 	 * Useful when the controller needs to add columns, or decorate existing columns, when these filters don't 
 	 * necessarily make sense directly in the API. 
 	 * 
-	 * @param $filterName
-	 * @param $parameters
-	 * @param $runBeforeGenericFilters Set to true if the filter will delete rows from the table, 
+	 * @param string $filterName
+	 * @param mixed $parameters
+	 * @param bool $runBeforeGenericFilters Set to true if the filter will delete rows from the table, 
 	 * 									and should therefore be ran before Sort, Limit, etc.
 	 * @return void
 	 */

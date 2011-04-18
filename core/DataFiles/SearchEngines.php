@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: SearchEngines.php 4075 2011-03-12 00:52:21Z vipsoft $
+ * @version $Id: SearchEngines.php 4484 2011-04-16 19:25:04Z vipsoft $
  *
  * @category Piwik
  * @package DataFiles
@@ -86,9 +86,6 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'abcsok.no'					=> array('ABCsøk', 'q', '?q={k}'),
 		'verden.abcsok.no'			=> array('ABCsøk'),
 
-		// about
-		'search.about.com'			=> array('About', 'terms', '?terms={k}'),
-
 		// Acoon
 		'www.acoon.de'				=> array('Acoon', 'begriff', 'cgi-bin/search.exe?begriff={k}'),
 
@@ -166,9 +163,10 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'arianna.libero.it'			=> array('Arianna', 'query', 'search/abin/integrata.cgi?query={k}'),
 
 		// Ask (IAC Search & Media)
-		'ask.com'					=> array('Ask', array('ask', 'q'), 'web?q={k}'),
+		'ask.com'					=> array('Ask', array('ask', 'q', 'searchfor'), 'web?q={k}'),
 		'web.ask.com'				=> array('Ask'),
 		'int.ask.com'				=> array('Ask'),
+		'mws.ask.com'				=> array('Ask'),
 		'images.ask.com'			=> array('Ask'),
 		'ask.reference.com'			=> array('Ask'),
 		'www.askkids.com'			=> array('Ask'),
@@ -206,12 +204,14 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Bing
 		'bing.com'					=> array('Bing', array('q', 'Q'), 'search?q={k}'),
+		'{}.bing.com'				=> array('Bing'),
 
 		// Bing Cache
 		'cc.bingj.com'				=> array('Bing'),
 
 		// Bing Images
 		'bing.com/images/search'	=> array('Bing Images', array('q', 'Q'), '?q={k}'),
+		'{}.bing.com/images/search'	=> array('Bing Images'),
 
 		// Blogdigger
 		'www.blogdigger.com'		=> array('Blogdigger', 'q'),
@@ -286,9 +286,6 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Eniro
 		'www.eniro.se'				=> array('Eniro', array('q', 'search_word'), 'query?q={k}'),
-
-		// Eudip
-		'www.eudip.com'				=> array('Eudip', ''),
 
 		// Eurip
 		'www.eurip.com'				=> array('Eurip', 'q', 'search/?q={k}'),
@@ -398,6 +395,8 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'www.cnn.com'				=> array('Google', 'query'),
 		'darkoogle.com'				=> array('Google'),
 		'search.darkoogle.com'		=> array('Google'),
+		'search.foxtab.com'			=> array('Google'),
+		'www.gooofullsearch.com'	=> array('Google', 'Keywords'),
 		'search.hiyo.com'			=> array('Google'),
 		'search.incredimail.com'	=> array('Google'),
 		'search1.incredimail.com'	=> array('Google'),
@@ -490,8 +489,14 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'webcrawler.com'			=> array('InfoSpace'),
 		'search.dogreatgood.com'	=> array('InfoSpace'),
 	
+		// Powered by InfoSpace
+		'isearch.babylon.com'		=> array('InfoSpace', 'q'),
+		'start.facemoods.com'		=> array('InfoSpace', 's'),
+		'search.magentic.com'		=> array('InfoSpace', 'q'),
+		'search.searchcompletion.com'=> array('InfoSpace', 'q'),
+
 		/*
-		 * InfoSpace powered metasearches are handled in Piwik_Common::extractSearchEngineInformationFromUrl()
+		 * Other InfoSpace powered metasearches are handled in Piwik_Common::extractSearchEngineInformationFromUrl()
 		 *
 		 * This includes sites such as:
 		 * - search.kiwee.com
@@ -596,7 +601,7 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'searchservice.myspace.com'	=> array('MySpace', 'qry', 'index.cfm?fuseaction=sitesearch.results&type=Web&qry={k}'),
 
 		// MySearch / MyWay / MyWebSearch (default: powered by Ask.com)
-		'www.mysearch.com'			=> array('MyWebSearch', 'searchfor', 'search/Ajmain.jhtml?searchfor={k}'),
+		'www.mysearch.com'			=> array('MyWebSearch', array('searchfor', 'searchFor'), 'search/Ajmain.jhtml?searchfor={k}'),
 		'ms114.mysearch.com'		=> array('MyWebSearch'),
 		'ms146.mysearch.com'		=> array('MyWebSearch'),
 		'kf.mysearch.myway.com'		=> array('MyWebSearch'),
@@ -678,9 +683,6 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		// Sapo
 		'pesquisa.sapo.pt'			=> array('Sapo', 'q', '?q={k}'),
 
-		// scroogle.org
-		'www.scroogle.org'			=> array('Scroogle', ''),
-	
 		// Search.com
 		'www.search.com'			=> array('Search.com', 'q', 'search?q={k}'),
 
@@ -692,9 +694,6 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// SearchCanvas
 		'www.searchcanvas.com'		=> array('SearchCanvas', 'q', 'web?q={k}'),
-
-		// Seek
-		'www.seek.fr'				=> array('Seek.fr', ''),
 
 		// Searchy
 		'www.searchy.co.uk'			=> array('Searchy', 'q', 'index.html?q={k}'),
@@ -743,7 +742,7 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'www.teoma.com'				=> array('Teoma', 'q', 'web?q={k}'),
 
 		// Terra -- referer does not contain search phrase (keywords)
-		'buscador.terra.es'			=> array('Terra'),
+		'buscador.terra.es'			=> array('Terra', 'query', 'Default.aspx?source=Search&query={k}'),
 		'buscador.terra.cl'			=> array('Terra'),
 		'buscador.terra.com.br'		=> array('Terra'),
 
@@ -784,6 +783,7 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'ricercaimmagini.virgilio.it'=> array('Virgilio'),
 		'ricercavideo.virgilio.it'	=> array('Virgilio'),
 		'ricercanews.virgilio.it'	=> array('Virgilio'),
+		'mobile.virgilio.it'		=> array('Virgilio', 'qrs'),
 
 		// Voila
 		'search.ke.voila.fr'		=> array('Voila', 'rdata', 'S/voila?rdata={k}'),
@@ -847,9 +847,13 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'one.cn.yahoo.com'			=> array('Yahoo!'),
 		'siteexplorer.search.yahoo.com'	=> array('Yahoo!'),
 
-		'de.dir.yahoo.com'			=> array('Yahoo! Webverzeichnis', ''),
-		'cf.dir.yahoo.com'			=> array('Yahoo! Directory', ''),
-		'fr.dir.yahoo.com'			=> array('Yahoo! Directory', ''),
+		// Powered by Yahoo APIs
+		'www.cercato.it'			=> array('Yahoo!', 'q'),
+		'search.offerbox.com'		=> array('Yahoo!', 'q'),
+
+		// Yahoo! Directory
+		'search.yahoo.com/search/dir' => array('Yahoo! Directory', 'p', '?p={k}'),
+//		'{}.dir.yahoo.com'			=> array('Yahoo! Directory'),
 
 		// Yahoo! Images
 		'images.search.yahoo.com'	=> array('Yahoo! Images', 'p', 'search/images?p={k}'),

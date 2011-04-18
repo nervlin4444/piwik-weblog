@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: VisitTime.php 3878 2011-02-13 03:04:55Z matt $
+ * @version $Id: VisitTime.php 4392 2011-04-11 00:55:30Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitTime
@@ -50,6 +50,7 @@ class Piwik_VisitTime extends Piwik_Plugin
 			'module' => 'VisitTime',
 			'action' => 'getVisitInformationPerLocalTime',
 			'dimension' => Piwik_Translate('VisitTime_ColumnLocalTime'),
+			'order' => 20
 		);
 		
 		$reports[] = array(
@@ -58,6 +59,7 @@ class Piwik_VisitTime extends Piwik_Plugin
 			'module' => 'VisitTime',
 			'action' => 'getVisitInformationPerServerTime',
 			'dimension' => Piwik_Translate('VisitTime_ColumnServerTime'),
+			'order' => 15,
 		);
 	}
 	

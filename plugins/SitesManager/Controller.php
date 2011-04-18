@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3946 2011-02-19 18:13:23Z vipsoft $
+ * @version $Id: Controller.php 4451 2011-04-14 19:00:39Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_SitesManager
@@ -14,7 +14,7 @@
  *
  * @package Piwik_SitesManager
  */
-class Piwik_SitesManager_Controller extends Piwik_Controller
+class Piwik_SitesManager_Controller extends Piwik_Controller_Admin
 {
 	/*
 	 * Main view showing listing of websites and settings
@@ -23,6 +23,11 @@ class Piwik_SitesManager_Controller extends Piwik_Controller
 	{
 		$view = Piwik_View::factory('SitesManager');
 		$sites = Piwik_SitesManager_API::getInstance()->getSitesWithAdminAccess();
+		foreach($sites as $site)
+		{
+			$sitesIndexedById[$site['idsite']] = $site;
+		}
+		Piwik_Site::setSites($sitesIndexedById);
 		foreach($sites as &$site)
 		{
 			$site['alias_urls'] = Piwik_SitesManager_API::getInstance()->getSiteUrlsFromId($site['idsite']);

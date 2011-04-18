@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Action.php 4096 2011-03-16 03:16:47Z vipsoft $
+ * @version $Id: Action.php 4389 2011-04-10 23:36:30Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -134,9 +134,12 @@ class Piwik_Tracker_Action implements Piwik_Tracker_Action_Interface
 		{
 			return $originalUrl;
 		}
-		$campaignTrackingParameters = array(
-				Piwik_Tracker_Config::getInstance()->Tracker['campaign_var_name'],
-				Piwik_Tracker_Config::getInstance()->Tracker['campaign_keyword_var_name']);
+		$campaignTrackingParameters = Piwik_Common::getCampaignParameters();
+		
+		$campaignTrackingParameters = array_merge(
+				$campaignTrackingParameters[0], // campaign name parameters
+				$campaignTrackingParameters[1] // campaign keyword parameters
+		);	
 				
 		$excludedParameters = isset($website['excluded_parameters']) 
 									? $website['excluded_parameters'] 

@@ -8,7 +8,7 @@
 	<link rel="stylesheet" type="text/css" href="plugins/Login/templates/login.css" />
 	<meta name="description" content="{'General_OpenSourceWebAnalytics'|translate|escape}" />
 	
-{if isset($enableFramedLogins) && !$enableFramedLogins}
+{if isset($enableFrames) && !$enableFrames}
 {literal}
 	<style>body { display : none; }</style>
 {/literal}
@@ -37,9 +37,12 @@
 	</script>
 {/literal}
 	<script type="text/javascript" src="libs/jquery/jquery.js"></script>
+{if 'General_LayoutDirection'|translate =='rtl'}
+<link rel="stylesheet" type="text/css" href="themes/default/rtl.css" />
+{/if}
 </head>
 <body class="login">
-{if isset($enableFramedLogins) && !$enableFramedLogins}
+{if isset($enableFrames) && !$enableFrames}
 {literal}
 	<script type="text/javascript">
 		if(self == top) {

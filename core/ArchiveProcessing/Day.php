@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Day.php 3892 2011-02-14 03:40:45Z matt $
+ * @version $Id: Day.php 4465 2011-04-15 04:17:43Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -26,7 +26,6 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	{
 		parent::__construct();
 		$this->db = Zend_Registry::get('db');
-		$this->debugAlwaysArchive = Zend_Registry::get('config')->Debug->always_archive_data_day;
 	}
 
 	/**
@@ -36,43 +35,95 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	 */
 	protected function compute()
 	{
+		if(!$this->isThereSomeVisits())
+		{
+			return;
+		}
+		Piwik_PostEvent('ArchiveProcessing_Day.compute', $this);
+	}
+	
+	/**
+	 * Returns true if there are logs for the current archive.
+	 * 
+	 * If the current archive is for a specific plugin (for example, Referers), 
+	 *   (for example when a Segment is defined and the Keywords report is requested)
+	 * Then the function will create the Archive for the Core metrics 'VisitsSummary' which will in turn process the number of visits
+	 * 
+	 *  If there is no specified segment, the SQL query will always run. 
+	 */
+	public function isThereSomeVisits()
+	{
+		if(!is_null($this->isThereSomeVisits))
+		{
+			if($this->isThereSomeVisits && is_null($this->nb_visits)) { debug_print_backtrace(); exit; }
+			return $this->isThereSomeVisits;
+		}
 		// Handling Custom Segment
 		$segmentSql = $this->getSegment()->getSql();
 		$sqlSegmentBind = $segmentSql['bind'];
 		$sqlSegment = $segmentSql['sql'];
 		if(!empty($sqlSegment)) $sqlSegment = ' AND '.$sqlSegment;
-		
-		$query = "SELECT 	count(distinct idvisitor) as nb_uniq_visitors, 
-							count(*) as nb_visits,
-							sum(visit_total_actions) as nb_actions, 
-							max(visit_total_actions) as max_actions, 
-							sum(visit_total_time) as sum_visit_length,
-							sum(case visit_total_actions when 1 then 1 else 0 end) as bounce_count,
-							sum(case visit_goal_converted when 1 then 1 else 0 end) as nb_visits_converted
-					FROM ".Piwik_Common::prefixTable('log_visit')."
-					WHERE visit_last_action_time >= ?
-						AND visit_last_action_time <= ?
-						AND idsite = ?
-						$sqlSegment
-					ORDER BY NULL";
-		$bind = array_merge(array($this->getStartDatetimeUTC(), $this->getEndDatetimeUTC(), $this->idsite )
-							, $sqlSegmentBind);
-		$row = $this->db->fetchRow($query, $bind );
-		if($row === false || $row === null || $row['nb_visits'] == 0)
-		{
-			return;
-		}
 
-		$this->isThereSomeVisits = true;
+		// We check if there is visits for the requested date / site / segment
+		//  If no specified Segment 
+		//  Or if a segment is passed and we specifically process VisitsSummary
+		//   Then we check the logs. This is to ensure that this query is ran only once for this day/site/segment (rather than running it for every plugin)  
+		if(empty($sqlSegment) 
+			|| self::getPluginBeingProcessed($this->getRequestedReport()) == 'VisitsSummary')
+		{
+			$query = "SELECT 	count(distinct idvisitor) as nb_uniq_visitors, 
+								count(*) as nb_visits,
+								sum(visit_total_actions) as nb_actions, 
+								max(visit_total_actions) as max_actions, 
+								sum(visit_total_time) as sum_visit_length,
+								sum(case visit_total_actions when 1 then 1 else 0 end) as bounce_count,
+								sum(case visit_goal_converted when 1 then 1 else 0 end) as nb_visits_converted
+						FROM ".Piwik_Common::prefixTable('log_visit')."
+						WHERE visit_last_action_time >= ?
+							AND visit_last_action_time <= ?
+							AND idsite = ?
+							$sqlSegment
+						ORDER BY NULL";
+			$bind = array_merge(array($this->getStartDatetimeUTC(), $this->getEndDatetimeUTC(), $this->idsite )
+								, $sqlSegmentBind);
+//			echo "Querying logs...";
+//			var_dump($query);var_dump($bind);
+			
+			$row = $this->db->fetchRow($query, $bind );
+			if($row === false || $row === null || $row['nb_visits'] == 0)
+			{
+				$this->isThereSomeVisits = false;
+				return $this->isThereSomeVisits;
+			}
 	
-		foreach($row as $name => $value)
-		{
-			$this->insertNumericRecord($name, $value);
+			foreach($row as $name => $value)
+			{
+				$this->insertNumericRecord($name, $value);
+			}
+			$this->setNumberOfVisits($row['nb_visits']);
+			$this->setNumberOfVisitsConverted($row['nb_visits_converted']);
+			$this->isThereSomeVisits = true;
+			return $this->isThereSomeVisits;
 		}
-
-		$this->setNumberOfVisits($row['nb_visits']);
-		$this->setNumberOfVisitsConverted($row['nb_visits_converted']);
-		Piwik_PostEvent('ArchiveProcessing_Day.compute', $this);
+		
+		// If a segment is specified but a plugin other than 'VisitsSummary' is being requested
+		// Then we create an archive for processing VisitsSummary Core Metrics, which will in turn execute the $query above
+		$archive = new Piwik_Archive_Single();
+		$archive->setSite( $this->site );
+		$archive->setPeriod( $this->period );
+		$archive->setSegment( $this->getSegment() );
+		$archive->setRequestedReport( 'VisitsSummary' );
+		
+		$nbVisits = $archive->getNumeric('nb_visits');
+		$isThereSomeVisits = $nbVisits > 0;
+		if($isThereSomeVisits)
+		{
+			$nbVisitsConverted = $archive->getNumeric('nb_visits_converted');
+			$this->setNumberOfVisits($nbVisits);
+			$this->setNumberOfVisitsConverted($nbVisitsConverted);
+		}
+		$this->isThereSomeVisits = $isThereSomeVisits;
+		return $this->isThereSomeVisits;
 	}
 	
 	/**
@@ -120,8 +171,11 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	}
 
 	/**
-	 * @param $label mixed Can be a string, eg. "referer_name", will be aliased as 'label' in the returned rows
+	 * Query visits by dimension
+	 *
+	 * @param string $label mixed Can be a string, eg. "referer_name", will be aliased as 'label' in the returned rows
 	 * 				Can also be an array of strings, when the dimension spans multiple fields, eg. array("referer_name", "referer_keyword") 
+	 * @param string $where Additional condition for WHERE clause
 	 */
 	public function queryVisitsByDimension($label, $where = '')
 	{
@@ -180,6 +234,7 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	protected function isSegmentAvailableForConversions()
 	{
 	    $allowedSegmentsOnConversions = array(
+	    		'idvisitor',
                 'referer_type',
                 'referer_name',
                 'referer_keyword',
@@ -242,7 +297,8 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	    }
 		$query = "SELECT idgoal,
 						count(*) as `". Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS ."`,
-						sum(revenue) as `". Piwik_Archive::INDEX_GOAL_REVENUE ."`,
+						truncate(sum(revenue),2) as `". Piwik_Archive::INDEX_GOAL_REVENUE ."`,
+						count(distinct idvisit) as `". Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED."`,
 						$select
 			 	FROM ".Piwik_Common::prefixTable('log_conversion')."
 			 	WHERE server_time >= ?
@@ -391,8 +447,8 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	 * 				)
 	 * 
 	 * 
-	 * @param array $arrayLevel0 
-	 * @param array of Piwik_DataTable $subArrayLevel1ByKey 
+	 * @param array $arrayLevel0
+	 * @param array $subArrayLevel1ByKey Array of Piwik_DataTable
 	 * @return array Array with N elements: the strings of the datatable serialized 
 	 */
 	public function getDataTableWithSubtablesFromArraysIndexedByLabel( $arrayLevel0, $subArrayLevel1ByKey )
@@ -483,7 +539,7 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	 * Given an array of stats, it will process the sum of goal conversions 
 	 * and sum of revenue and add it in the stats array in two new fields.
 	 * 
-	 * @param $interestByLabel Passed by reference, it will be modified as follows:
+	 * @param array $interestByLabel Passed by reference, it will be modified as follows:
 	 * Input: 
 	 * 		array( 
 	 * 			LABEL  => array( Piwik_Archive::INDEX_NB_VISITS => X, 
@@ -518,11 +574,12 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 		{
 			if(isset($values[Piwik_Archive::INDEX_GOALS]))
 			{
-				$revenue = $conversions = 0;
+				$revenue = $conversions = $nbVisitsConverted = 0;
 				foreach($values[Piwik_Archive::INDEX_GOALS] as $idgoal => $goalValues)
 				{
 					$revenue += $goalValues[Piwik_Archive::INDEX_GOAL_REVENUE];
 					$conversions += $goalValues[Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS];
+					$nbVisitsConverted += $goalValues[Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED];
 				}
 				$values[Piwik_Archive::INDEX_NB_CONVERSIONS] = $conversions;
 				$values[Piwik_Archive::INDEX_REVENUE] = $revenue;
@@ -544,12 +601,14 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	function updateGoalStats($newRowToAdd, &$oldRowToUpdate)
 	{
 		$oldRowToUpdate[Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS]	+= $newRowToAdd[Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS];
+		$oldRowToUpdate[Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED]	+= $newRowToAdd[Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED];
 		$oldRowToUpdate[Piwik_Archive::INDEX_GOAL_REVENUE] 			+= $newRowToAdd[Piwik_Archive::INDEX_GOAL_REVENUE];
 	}
 	
 	function getNewGoalRow()
 	{
 		return array(	Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS 	=> 0, 
+						Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED => 0, 
 						Piwik_Archive::INDEX_GOAL_REVENUE 			=> 0, 
 					);
 	}
@@ -557,6 +616,7 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 	function getGoalRowFromQueryRow($queryRow)
 	{
 		return array(	Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS 	=> $queryRow[Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS], 
+						Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED => $queryRow[Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED], 
 						Piwik_Archive::INDEX_GOAL_REVENUE 			=> $queryRow[Piwik_Archive::INDEX_GOAL_REVENUE], 
 					);
 	}

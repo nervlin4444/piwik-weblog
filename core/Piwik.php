@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Piwik.php 4094 2011-03-16 01:20:42Z matt $
+ * @version $Id: Piwik.php 4472 2011-04-15 06:28:56Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -31,7 +31,21 @@ class Piwik
 			'week'	=> 2,
 			'month'	=> 3,
 			'year'	=> 4,
+			'range' => 5,
 		);
+
+	/**
+	 * Should we process and display Unique Visitors?
+	 * -> Always process for day/week/month periods
+	 * For Year and Range, only process if it was enabled in the config file,
+	 *
+	 * @return bool
+	 */
+	static public function isUniqueVisitorsEnabled($periodLabel)
+	{
+		return in_array($periodLabel, array('day', 'week', 'month'))
+			|| Zend_Registry::get('config')->General->enable_processing_unique_visitors_year_and_range ;
+	}
 
 /*
  * Prefix/unprefix class name
@@ -99,7 +113,18 @@ class Piwik
 	{
 		return Piwik_Db_Schema::getInstance()->hasTables();
 	}
-
+	
+	/**
+	 * Called on Core install, update, plugin enable/disable
+	 * Will clear all cache that could be affected by the change in configuration being made
+	 */
+	static public function deleteAllCacheOnUpdate()
+	{
+		Piwik_AssetManager::removeMergedAssets();
+		Piwik_View::clearCompiledTemplates();
+		Piwik_Common::deleteTrackerCache();
+	}
+	
 /*
  * HTTP headers
  */
@@ -116,6 +141,7 @@ class Piwik
 	/**
 	 * Set response header, e.g., HTTP/1.0 200 Ok
 	 *
+	 * @param string $status Status
 	 * @return bool
 	 */
 	static public function setHttpStatus($status)
@@ -359,8 +385,9 @@ class Piwik
 				'/tmp/',
 				'/tmp/templates_c/',
 				'/tmp/cache/',
-				'/tmp/latest/',
 				'/tmp/assets/',
+				'/tmp/latest/',
+				'/tmp/tcpdf/',
 			);
 		}
 
@@ -825,6 +852,7 @@ class Piwik
 	 */
 	static public function setMemoryLimit($minimumMemoryLimit)
 	{
+		// in Megabytes
 		$currentValue = self::getMemoryLimitValue();
 		if( ($currentValue === false
 			|| $currentValue < $minimumMemoryLimit )
@@ -857,11 +885,34 @@ class Piwik
  * Logging and error handling
  */
 
+	/**
+	 * Log a message
+	 *
+	 * @param string $message
+	 */
 	static public function log($message = '')
 	{
-		Zend_Registry::get('logger_message')->logEvent($message);
+		static $shouldLog = null;
+		if(is_null($shouldLog))
+		{
+			$shouldLog = (Piwik_Common::isPhpCliMode()
+							|| Zend_Registry::get('config')->log->log_only_when_cli == 0)
+						&& 
+						  ( Zend_Registry::get('config')->log->log_only_when_debug_parameter == 0
+						  	|| isset($_REQUEST['debug']))
+						;
+		}
+		if($shouldLog)
+		{
+			Zend_Registry::get('logger_message')->logEvent($message);
+		}
 	}
 
+	/**
+	 * Trigger E_USER_ERROR with optional message
+	 *
+	 * @param string $message
+	 */
 	static public function error($message = '')
 	{
 		trigger_error($message, E_USER_ERROR);
@@ -870,6 +921,8 @@ class Piwik
 	/**
 	 * Display the message in a nice red font with a nice icon
 	 * ... and dies
+	 *
+	 * @param string $message
 	 */
 	static public function exitWithErrorMessage( $message )
 	{
@@ -995,8 +1048,7 @@ class Piwik
 		}
 		uasort( $infoIndexedByQuery, 'sortTimeDesc');
 
-		Piwik::log('<hr /><b>SQL Profiler</b>');
-		Piwik::log('<hr /><b>Summary</b>');
+		$str = '<hr /><b>SQL Profiler</b><hr /><b>Summary</b><br/>';
 		$totalTime	= $profiler->getTotalElapsedSecs();
 		$queryCount   = $profiler->getTotalNumQueries();
 		$longestTime  = 0;
@@ -1007,10 +1059,10 @@ class Piwik
 				$longestQuery = $query->getQuery();
 			}
 		}
-		$str = 'Executed ' . $queryCount . ' queries in ' . round($totalTime,3) . ' seconds' . "\n";
-		$str .= '(Average query length: ' . round($totalTime / $queryCount,3) . ' seconds)' . "\n";
-		$str .= '<br />Queries per second: ' . round($queryCount / $totalTime,1) . "\n";
-		$str .= '<br />Longest query length: ' . round($longestTime,3) . " seconds (<code>$longestQuery</code>) \n";
+		$str .= 'Executed ' . $queryCount . ' queries in ' . round($totalTime,3) . ' seconds';
+		$str .= '(Average query length: ' . round($totalTime / $queryCount,3) . ' seconds)';
+		$str .= '<br />Queries per second: ' . round($queryCount / $totalTime,1) ;
+		$str .= '<br />Longest query length: ' . round($longestTime,3) . " seconds (<code>$longestQuery</code>)";
 		Piwik::log($str);
 		Piwik::getSqlProfilingQueryBreakdownOutput($infoIndexedByQuery);
 	}
@@ -1022,8 +1074,7 @@ class Piwik
 	 */
 	static private function getSqlProfilingQueryBreakdownOutput( $infoIndexedByQuery )
 	{
-		Piwik::log('<hr /><b>Breakdown by query</b>');
-		$output = '';
+		$output = '<hr /><b>Breakdown by query</b><br/>';
 		foreach($infoIndexedByQuery as $query => $queryInfo)
 		{
 			$timeMs = round($queryInfo['sumTimeMs'],1);
@@ -1045,7 +1096,7 @@ class Piwik
 	 */
 	static public function printTimer()
 	{
-		echo Zend_Registry::get('timer');
+		Piwik::log(Zend_Registry::get('timer'));
 	}
 
 	/**
@@ -1066,7 +1117,7 @@ class Piwik
 	 *
 	 * @param string $prefixString
 	 */
-	static public function printMemoryUsage( $prefixString = null )
+	static public function getMemoryUsage()
 	{
 		$memory = false;
 		if(function_exists('xdebug_memory_usage'))
@@ -1077,20 +1128,12 @@ class Piwik
 		{
 			$memory = memory_get_usage();
 		}
-
-		if($memory !== false)
+		if($memory === false)
 		{
-			$usage = round( $memory / 1024 / 1024, 2);
-			if(!is_null($prefixString))
-			{
-				Piwik::log($prefixString);
-			}
-			Piwik::log("Memory usage = $usage Mb");
+			return "Memory usage function not found.";
 		}
-		else
-		{
-			Piwik::log("Memory usage function not found.");
-		}
+		$usage = number_format( round($memory / 1024 / 1024, 2), 2);
+		return "$usage Mb";
 	}
 
 /*
@@ -1168,11 +1211,11 @@ class Piwik
 
 	/**
 	 * For the given value, based on the column name, will apply: pretty time, pretty money
-	 * @param $idSite
-	 * @param $columnName
-	 * @param $value
-	 * @param $htmlAllowed
-	 * @param $timeAsSentence
+	 * @param int $idSite
+	 * @param string $columnName
+	 * @param mixed $value
+	 * @param bool $htmlAllowed
+	 * @param string $timeAsSentence
 	 * @return string
 	 */
 	static public function getPrettyValue($idSite, $columnName, $value, $htmlAllowed, $timeAsSentence)
@@ -1314,9 +1357,9 @@ class Piwik
 	}
 
 	/**
-	 * Returns relative path to the App logo
+	 * Returns relative path to the application logo
 	 *
-	 * @return string
+	 * @return string Absolute path to application logo
 	 */
 	public function getLogoPath()
 	{
@@ -1363,10 +1406,10 @@ class Piwik
 		$title = $titles[ $id % count($titles)];
 		return $title;
 	}
-	
+
 	/**
 	 * Number of websites to show in the Website selector
-	 * 
+	 *
 	 * @return int
 	 */
 	static public function getWebsitesCountToDisplay()
@@ -1380,6 +1423,11 @@ class Piwik
  * Access
  */
 
+	/**
+	 * Get current user email address
+	 *
+	 * @return string
+	 */
 	static public function getCurrentUserEmail()
 	{
 		if(!Piwik::isUserIsSuperUser())
@@ -1390,10 +1438,11 @@ class Piwik
 		$superuser = Zend_Registry::get('config')->superuser;
 		return $superuser->email;
 	}
+
 	/**
 	 * Get current user login
 	 *
-	 * @return string
+	 * @return string login ID
 	 */
 	static public function getCurrentUserLogin()
 	{
@@ -1403,7 +1452,7 @@ class Piwik
 	/**
 	 * Get current user's token auth
 	 *
-	 * @return string
+	 * @return string Token auth
 	 */
 	static public function getCurrentUserTokenAuth()
 	{
@@ -1460,12 +1509,22 @@ class Piwik
 			return false;
 		}
 	}
-	
+
+	/**
+	 * Is user the anonymous user?
+	 *
+	 * @return bool True if anonymouse; false otherwise
+	 */
 	static public function isUserIsAnonymous()
 	{
 		return Piwik::getCurrentUserLogin() == 'anonymous';
 	}
 
+	/**
+	 * Checks if user is not the anonymous user.
+	 *
+	 * @throws Exception if user is anonymous.
+	 */
 	static public function checkUserIsNotAnonymous()
 	{
 		if(self::isUserIsAnonymous())
@@ -1477,6 +1536,8 @@ class Piwik
 	/**
 	 * Helper method user to set the current as Super User.
 	 * This should be used with great care as this gives the user all permissions.
+	 *
+	 * @param bool True to set current user as super user
 	 */
 	static public function setUserIsSuperUser( $bool = true )
 	{
@@ -1649,7 +1710,7 @@ class Piwik
 	 * array[]=value1&array[]=value2 in the URL.
 	 * This function will handle both cases and return the array.
 	 *
-	 * @param $columns String or array
+	 * @param array|string $columns String or array
 	 * @return array
 	 */
 	static public function getArrayFromApiParameter($columns)
@@ -1665,8 +1726,9 @@ class Piwik
 	/**
 	 * Redirect to module (and action)
 	 *
-	 * @param string $newModule
-	 * @param string $newAction
+	 * @param string $newModule Target module
+	 * @param string $newAction Target action
+	 * @param array $parameters Parameters to modify in the URL
 	 * @return bool false if the URL to redirect to is already this URL
 	 */
 	static public function redirectToModule( $newModule, $newAction = '', $parameters = array() )
@@ -1847,6 +1909,11 @@ class Piwik
 	 */
 	static public function checkValidLoginString( $userLogin )
 	{
+		if(!self::isChecksEnabled()
+			&& !empty($userLogin))
+		{
+			return;
+		}
 		$loginMinimumLength = 3;
 		$loginMaximumLength = 100;
 		$l = strlen($userLogin);
@@ -1859,15 +1926,26 @@ class Piwik
 		}
 	}
 
+	/**
+	 * Should Piwik check that the login & password have minimum length and valid characters?
+	 *
+	 * @return bool True if checks enabled; false otherwise
+	 */
+	static public function isChecksEnabled()
+	{
+		return Zend_Registry::get('config')->General->disable_checks_usernames_attributes == 0;
+	}
+
 /*
  * Date / Timezone
  */
 
 	/**
-	 * Returns true if the current php version supports timezone manipulation
-	 * (most likely if php >= 5.2)
+	 * Determine if this php version/build supports timezone manipulation
+	 * (e.g., php >= 5.2, or compiled with EXPERIMENTAL_DATE_SUPPORT=1 for
+	 * php < 5.2).
 	 *
-	 * @return bool
+	 * @return bool True if timezones supported; false otherwise
 	 */
 	static public function isTimezoneSupportEnabled()
 	{
@@ -1986,5 +2064,180 @@ class Piwik
 	static public function getTablesInstalled($forceReload = true)
 	{
 		return Piwik_Db_Schema::getInstance()->getTablesInstalled($forceReload);
+	}
+
+	/**
+	 * Escape special characters in string for LOAD DATA INFILE
+	 *
+	 * @param string $str
+	 * @return string
+	 */
+	static private function escapeString($str)
+	{
+		$str = str_replace(array('\\', '"'), array('\\\\', '\\"'), $str);
+		return $str;
+	}
+
+	/**
+	 * Performs a batch insert into a specific table using either LOAD DATA INFILE or plain INSERTs,
+	 * as a fallback. On MySQL, LOAD DATA INFILE is 20x faster than a series of plain INSERTs.
+	 *
+	 * @param string $tableName PREFIXED table name! you must call Piwik_Common::prefixTable() before passing the table name
+	 * @param array $fields array of unquoted field names
+	 * @param array $values array of data to be inserted
+	 * @return bool True if the bulk LOAD was used, false if we fallback to plain INSERTs
+	 */
+	static public function tableInsertBatch($tableName, $fields, $values)
+	{
+		$fieldList = '('.join(',', $fields).')';
+
+		try {
+//			throw new Exception('');
+			$filePath = PIWIK_USER_PATH . '/' . Piwik_AssetManager::MERGED_FILE_DIR . $tableName . '-'.Piwik_Common::generateUniqId().'.csv';
+
+			if (Piwik_Common::isWindows()) {
+				// On windows, MySQL expects slashes as directory separators
+				$filePath = str_replace('\\', '/', $filePath);
+			}
+
+			// Set up CSV delimiters, quotes, etc
+			$delim = "\t";
+			$quote = '"';
+			$eol   = "\r\n";
+			$null  = 'NULL';
+			$escape = '\\\\';
+
+			$fp = fopen($filePath, 'wb');
+			if (!$fp)
+			{
+				throw new Exception('Error creating the tmp file '.$filePath.', please check that the webserver has write permission to write this file.');
+			}
+
+			@chmod($filePath, 0777);
+
+			foreach ($values as $row)
+			{
+				$output = '';
+				foreach($row as $value)
+				{
+					if(!isset($value) || is_null($value) || $value === false)
+					{
+						$output .= $null.$delim;
+					}
+					else
+					{
+						$output .= $quote.self::escapeString($value).$quote.$delim;
+					}
+				}
+				// Replace delim with eol
+				unset($row[strlen($output)-strlen($delim)]);
+				$output .= $eol;
+
+				$ret = fwrite($fp, $output);
+				if (!$ret) {
+					fclose($fp);
+					unlink($filePath);
+					throw new Exception('Error writing to the tmp file '.$filePath.' containing the batch INSERTs.');
+				}
+			}
+			fclose($fp);
+
+			$query = "
+					'$filePath'
+				REPLACE
+				INTO TABLE
+					".$tableName;
+
+			// hack for charset mismatch
+			if(!self::isDatabaseConnectionUTF8() && !isset(Zend_Registry::get('config')->database->charset))
+			{
+				$query .= ' CHARACTER SET latin1';
+			}
+
+			$query .= "
+				FIELDS TERMINATED BY
+					'".$delim."'
+				ENCLOSED BY
+					'".$quote."'
+				ESCAPED BY
+					'".$escape."'
+				LINES TERMINATED BY
+					\"".$eol."\"
+				$fieldList
+			";
+
+			// initial attempt with LOCAL keyword
+			// note: may trigger a known PHP PDO_MYSQL bug when MySQL not built with --enable-local-infile
+			// @see http://bugs.php.net/bug.php?id=54158
+			try {
+				$result = @Piwik_Exec('LOAD DATA LOCAL INFILE'.$query);
+				if(empty($result)) {
+					throw new Exception("LOAD DATA LOCAL INFILE failed!");
+				}
+
+				unlink($filePath);
+				return true;
+			} catch(Exception $e) {
+			}
+
+			// second attempt without LOCAL keyword if MySQL server appears to be on the same box
+			// note: requires that the db user have the FILE privilege; however, since this is
+			// a global privilege, it may not be granted due to security concerns
+			$dbHost = Zend_Registry::get('config')->database->host;
+			$localHosts = array('127.0.0.1', 'localhost', 'localhost.local', 'localhost.localdomain', 'localhost.localhost');
+			$hostName = @php_uname('n');
+			if(!empty($hostName))
+			{
+				$localHosts = array_merge($localHosts, array($hostName, $hostName.'.local', $hostName.'.localdomain', $hostName.'.localhost'));
+			}
+
+			if(!empty($dbHost) && !in_array($dbHost, $localHosts))
+			{
+				throw new Exception("MYSQL appears to be on a remote server");
+			}
+
+			$result = @Piwik_Exec('LOAD DATA INFILE'.$query);
+			if(empty($result)) {
+				throw new Exception("LOAD DATA INFILE failed!");
+			}
+
+			unlink($filePath);
+			return true;
+		} catch(Exception $e) {
+			Piwik::log("LOAD DATA INFILE failed or not supported, falling back to normal INSERTs... Error was:" . $e->getMessage(), Piwik_Log::WARN);
+
+			// if all else fails, fallback to a series of INSERTs
+			unlink($filePath);
+			self::tableInsertBatchIterate($tableName, $fields, $values);
+		}
+		return false;
+	}
+
+	/**
+	 * Performs a batch insert into a specific table by iterating through the data
+	 *
+	 * NOTE: you should use tableInsertBatch() which will fallback to this function if LOAD DATA INFILE not available
+	 *
+	 * @param string $tableName PREFIXED table name! you must call Piwik_Common::prefixTable() before passing the table name
+	 * @param array $fields array of unquoted field names
+	 * @param array $values array of data to be inserted
+	 * @param bool $ignoreWhenDuplicate Ignore new rows that contain unique key values that duplicate old rows
+	 */
+	static public function tableInsertBatchIterate($tableName, $fields, $values, $ignoreWhenDuplicate = true)
+	{
+		$fieldList = '('.join(',', $fields).')';
+
+		$ignore = '';
+		if($ignoreWhenDuplicate) {
+			$ignore = ' IGNORE ';
+		}
+		foreach($values as $row) {
+			$toRecord = implode(', ', $row);
+			$query = "INSERT $ignore
+					INTO ".$tableName."
+					$fieldList
+					VALUES (".Piwik_Archive_Array::getSqlStringFieldsArray($row).")";
+			Piwik_Query($query, $row);
+		}
 	}
 }

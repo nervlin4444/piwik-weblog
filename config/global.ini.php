@@ -1,7 +1,7 @@
 ; <?php exit; ?> DO NOT REMOVE THIS LINE
 ; If you want to change some of these default values, the best practise is to override 
 ; them in your configuration file in config/config.ini.php. If you directly edit this file,
-; you risk losing your changes when you upgrade Piwik. 
+; you will lose your changes when you upgrade Piwik. 
 ; For example if you want to override action_title_category_delimiter, 
 ; edit config/config.ini.php and add the following:
 ; [General]
@@ -16,7 +16,7 @@ login			= root
 password		= 
 
 [database]
-host			= localhost
+host			= 
 username		= 
 password		= 
 dbname			= 
@@ -42,9 +42,12 @@ adapter 		= PDO_MYSQL
 ; this is useful when making changes to the archiving code so we can force the archiving process
 always_archive_data_period = 0;
 always_archive_data_day = 0;
+; Force archiving Custom date range (without re-archiving sub-periods used to process this date range)
+always_archive_data_range = 0;
 
 ; if set to 1, all the SQL queries will be recorded by the profiler 
 ; and a profiling summary will be printed at the end of the request
+; NOTE: you must also set  [log] logger_message[] = "screen" to enable the profiler to print on screen 
 enable_sql_profiler = 0
 
 ; if set to 1, a Piwik tracking code will be included in the Piwik UI footer and will track visits, pages, etc. to idsite = 1
@@ -64,6 +67,15 @@ disable_merged_requests = 0
 tracker_always_new_visitor = 0
 
 [General]
+; if set to 1, Unique Visitors will be processed for Years and Date Ranges
+; disabled by default, to ensure optimal performance for high traffic Piwik instances
+; if you set it to 1 and want the Unique Visitors to be re-processed in for reports in the past, drop all piwik_archive_* tables
+enable_processing_unique_visitors_year_and_range = 0
+
+; when set to 1, all requests to Piwik will return a maintenance message without connecting to the DB
+; this is useful when upgrading using the shell command, to prevent other users from accessing the UI while Upgrade is in progress
+maintenance_mode = 0
+
 ; character used to automatically create categories in the Actions > Pages, Outlinks and Downloads reports
 ; for example a URL like "example.com/blog/development/first-post" will create 
 ; the page first-post in the subcategory development which belongs to the blog category
@@ -112,9 +124,10 @@ default_day = yesterday
 ; Possible values: day, week, month, year.
 default_period = day
 
-; This setting is overriden in the UI, under "General Settings". This is the default value used if the setting hasn't been overriden via the UI.
 ; Time in seconds after which an archive will be computed again. This setting is used only for today's statistics.
 ; Defaults to 10 seconds so that by default, Piwik provides real time reporting.
+; This setting is overriden in the UI, under "General Settings". 
+; This is the default value used if the setting hasn't been overriden via the UI.
 time_before_today_archive_considered_outdated = 10
 
 ; This setting is overriden in the UI, under "General Settings". The default value is to allow browsers
@@ -130,6 +143,10 @@ minimum_pgsql_version = 8.3
 
 ; Minimum adviced memory limit in php.ini file (see memory_limit value)
 minimum_memory_limit = 128
+
+; Piwik will check that usernames and password have a minimum length, and will check that characters are "allowed"
+; This can be disabled, if for example you wish to import an existing User database in Piwik and your rules are less restrictive
+disable_checks_usernames_attributes = 0
 
 ; by default, Piwik uses relative URLs, so you can login using http:// or https://
 ; (the latter assumes you have a valid SSL certificate).
@@ -152,9 +169,13 @@ login_password_recovery_email_address = "password-recovery@{DOMAIN}"
 ; name that appears as a Sender in the password recovery email
 login_password_recovery_email_name = Piwik
 
-; Set to 1 to disable the framebuster (a click-jacking countermeasure).
+; Set to 1 to disable the framebuster on the Login page (a click-jacking countermeasure).
 ; Default is 0 (i.e., bust frames on the Login forms).
 enable_framed_logins = 0
+
+; Set to 1 to disable the framebuster on Admin pages (a click-jacking countermeasure).
+; Default is 0 (i.e., bust frames on the Settings forms).
+enable_framed_settings = 0
 
 ; language cookie name for session
 language_cookie_name = piwik_lang
@@ -183,13 +204,17 @@ datatable_archiving_maximum_rows_subtable_actions = 100
 ; maximum number of rows for other tables (Providers, User settings configurations)
 datatable_archiving_maximum_rows_standard = 500
 
+; by default, the real time Live! widget will update every 5 seconds and refresh with new visits/actions/etc.
+; you can change the timeout so the widget refreshes more often, or not as frequently 
+live_widget_refresh_after_seconds = 5
+
 ; by default, Piwik uses self-hosted AJAX libraries.
 ; If set to 1, Piwik uses a Content Distribution Network
 use_ajax_cdn = 0
 
 ; required AJAX library versions
-jquery_version = 1.5.1
-jqueryui_version = 1.8.10
+jquery_version = 1.5.2
+jqueryui_version = 1.8.11
 swfobject_version = 2.2
 
 ; Set to 1 if you're using https on your Piwik server and Piwik can't detect it,
@@ -228,20 +253,34 @@ api_service_url = http://api.piwik.org
 ; this is useful when you want to do cross websites analysis 
 use_third_party_id_cookie = 0
 
-; set to 0 if you want to stop tracking the visitors. Useful if you need to stop all the connections on the DB.
-record_statistics			= 1
-
-; length of a visit in seconds. If a visitor comes back on the website visit_standard_length seconds after his last page view, it will be recorded as a new visit  
-visit_standard_length       = 1800
-
-; visitors that stay on the website and view only one page will be considered as time on site of 0 second
-default_time_one_page_visit = 0
-
 ; By default, Piwik does not trust the idcookie as accurate and will always check that if the visitor visited
 ; the website earlier by looking for a visitor with the same IP and user configuration (to avoid abuse or misbehaviour)
 ; This setting should only be set to 1 in an intranet setting, where most users have the same configuration (browsers, OS)
 ; and the same IP. If left to 0 in this setting, all visitors will be counted as one single visitor. 
 trust_visitors_cookies = 0
+
+; name of the cookie used to store the visitor information
+; This is used only if use_third_party_id_cookie = 1
+cookie_name	= piwik_visitor
+
+; by default, the Piwik tracking cookie expires in 2 years
+; This is used only if use_third_party_id_cookie = 1
+cookie_expire = 63072000
+
+; The path on the server in which the cookie will be available on. 
+; Defaults to empty. See spec in http://curl.haxx.se/rfc/cookie_spec.html
+; This is used for the Ignore cookie, and the third party cookie if use_third_party_id_cookie = 1
+cookie_path = 
+
+; set to 0 if you want to stop tracking the visitors. Useful if you need to stop all the connections on the DB.
+record_statistics			= 1
+
+; length of a visit in seconds. If a visitor comes back on the website visit_standard_length seconds 
+; after his last page view, it will be recorded as a new visit  
+visit_standard_length       = 1800
+
+; visitors that stay on the website and view only one page will be considered as time on site of 0 second
+default_time_one_page_visit = 0
 
 ; if set to 1, Piwik attempts a "best guess" at the visitor's country of
 ; origin when the preferred language tag omits region information.
@@ -255,26 +294,19 @@ enable_language_to_country_guess = 1
 ; Set to 0 to disable Scheduled tasks completely.
 scheduled_tasks_min_interval = 3600
 
-; name of the cookie used to store the visitor information
-cookie_name	= piwik_visitor
-
-; by default, the Piwik tracking cookie expires in 2 years
-cookie_expire = 63072000
-
-; The path on the server in which the cookie will be available on. 
-; Defaults to empty. See spec in http://curl.haxx.se/rfc/cookie_spec.html
-cookie_path = 
-
 ; name of the cookie to ignore visits
 ignore_visits_cookie_name = piwik_ignore 
 
-; variable name to track any campaign, for example CPC campaign
+; Comma separated list of variable names that will be read to define a Campaign name, for example CPC campaign
 ; Example: If a visitor first visits 'index.php?piwik_campaign=Adwords-CPC' then it will be counted as a campaign referer named 'Adwords-CPC'
-campaign_var_name			= piwik_campaign
+; Includes by default the GA style campaign parameters
+campaign_var_name			= "piwik_campaign,utm_campaign,utm_source,utm_medium"
 
-; variable name to track any campaign keyword
-; Example: If a visitor first visits 'index.php?piwik_campaign=Adwords-CPC&piwik_kwd=My killer keyword' then it will be counted as a campaign referer named 'Adwords-CPC' with the keyword 'My killer keyword'
-campaign_keyword_var_name	= piwik_kwd
+; Comma separated list of variable names that will be read to track a Campaign Keyword
+; Example: If a visitor first visits 'index.php?piwik_campaign=Adwords-CPC&piwik_kwd=My killer keyword' ;
+; then it will be counted as a campaign referer named 'Adwords-CPC' with the keyword 'My killer keyword'
+; Includes by default the GA style campaign keyword parameter utm_term
+campaign_keyword_var_name	= "piwik_kwd,utm_term"
 
 ; maximum length of a Page Title or a Page URL recorded in the log_action.name table
 page_maximum_length = 1024;
@@ -313,6 +345,14 @@ encryption =						; SMTP transport-layer encryption, either 'ssl', 'tls', or emp
 ;logger_message[]		= screen
 logger_error[]			= screen
 logger_exception[]		= screen
+
+; if set to 1, only requests done in CLI mode (eg. the archive.sh cron run) will be logged
+; NOTE: log_only_when_debug_parameter will also be checked for
+log_only_when_cli = 0
+
+; if set to 1, only requests with "&debug" parameter will be logged
+; NOTE: log_only_when_cli will also be checked for
+log_only_when_debug_parameter = 0
 
 ; if configured to log in files, log files will be created in this path
 ; eg. if the value is tmp/logs files will be created in /path/to/piwik/tmp/logs/

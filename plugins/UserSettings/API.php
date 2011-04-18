@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3870 2011-02-12 13:34:53Z matt $
+ * @version $Id: API.php 4448 2011-04-14 08:20:49Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UserSettings
@@ -16,7 +16,9 @@
 require_once PIWIK_INCLUDE_PATH . '/plugins/UserSettings/functions.php';
 
 /**
- *
+ * The UserSettings API lets you access reports about your Visitors technical settings: browsers, browser types (rendering engine), 
+ * operating systems, plugins supported in their browser, Screen resolution and Screen types (normal, widescreen, dual screen or mobile).
+ *  
  * @package Piwik_UserSettings
  */
 class Piwik_UserSettings_API 

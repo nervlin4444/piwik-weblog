@@ -11,18 +11,20 @@
 <td class="multisites-column">
     %actions%&nbsp;
 </td>
-{if $period!='year'}
+{if $displayUniqueVisitors}
 <td class="multisites-column">
     %unique%&nbsp;
 </td>
 {/if}
-<td style="width:170px">
-    <div class="visits" style="display:none">%visitsSummary%</div>
-    <div class="actions"style="display:none">%actionsSummary%</div>
-{if $period!='year'}
-    <div class="unique" >%uniqueSummary%</div>
+{if $period!='range'}
+	<td style="width:170px">
+	    <div class="visits" style="display:none">%visitsSummary%</div>
+	    <div class="actions"style="display:none">%actionsSummary%</div>
+	{if $displayUniqueVisitors}
+	    <div class="unique" >%uniqueSummary%</div>
+	{/if}
+	</td>
 {/if}
-</td>
 {if $show_sparklines}
 <td style="width:180px">
     <div id="sparkline_%idsite%" style="width: 100px; margin: auto">

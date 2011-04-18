@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3957 2011-02-21 18:30:41Z vipsoft $
+ * @version $Id: Controller.php 4366 2011-04-07 22:07:03Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_Installation
@@ -73,8 +73,7 @@ class Piwik_Installation_Controller extends Piwik_Controller
 	function welcome($message = false)
 	{
 		// Delete merged js/css files to force regenerations based on updated activated plugin list
-		Piwik_AssetManager::removeMergedAssets();
-		Piwik_View::clearCompiledTemplates();
+		Piwik::deleteAllCacheOnUpdate();
 		
 		$view = new Piwik_Installation_View(
 						$this->pathView . 'welcome.tpl',
@@ -123,6 +122,7 @@ class Piwik_Installation_Controller extends Piwik_Controller
 			'eval'            => 'Installation_SystemCheckEvalHelp',
 			'gzcompress'      => 'Installation_SystemCheckGzcompressHelp',
 			'gzuncompress'    => 'Installation_SystemCheckGzuncompressHelp',
+			'pack'            => 'Installation_SystemCheckPackHelp',
 		);
 
 		$view->problemWithSomeDirectories = (false !== array_search(false, $view->infos['directories']));
@@ -528,6 +528,8 @@ class Piwik_Installation_Controller extends Piwik_Controller
 
 		$this->session->currentStepDone = __FUNCTION__;
 		echo $view->render();
+
+		$this->session->unsetAll();
 	}
 
 	/**
@@ -685,12 +687,11 @@ class Piwik_Installation_Controller extends Piwik_Controller
 		$infos['directories'] = Piwik::checkDirectoriesWritable();
 		$infos['can_auto_update'] = Piwik::canAutoUpdate();
 		
-		$serverSoftware = isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : '';
-		if(preg_match('/^Microsoft-IIS\/(.+)/', $serverSoftware, $matches) && version_compare($matches[1], '7') >= 0)
+		if(Piwik_Common::isIIS())
 		{
 			Piwik::createWebConfigFiles();
 		}
-		else if(!strncmp($serverSoftware, 'Apache', 6))
+		else
 		{
 			Piwik::createHtAccessFiles();
 		}
@@ -732,6 +733,7 @@ class Piwik_Installation_Controller extends Piwik_Controller
 			'eval',
 			'gzcompress',
 			'gzuncompress',
+			'pack',
 		);
 		$infos['needed_functions'] = $needed_functions;
 		$infos['missing_functions'] = array();
@@ -810,6 +812,7 @@ class Piwik_Installation_Controller extends Piwik_Controller
 			$infos['isIpv4'] = false;
 		}
 
+		$serverSoftware = isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : '';
 		$infos['serverVersion'] = addslashes($serverSoftware);
 		$infos['serverOs'] = @php_uname();
 		$infos['serverTime'] = date('H:i:s');

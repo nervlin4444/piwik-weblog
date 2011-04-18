@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Translate.php 3663 2011-01-07 11:28:33Z matt $
+ * @version $Id: Translate.php 4311 2011-04-04 18:49:55Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -55,7 +55,7 @@ class Piwik_Translate
 	/**
 	 * Reads the specified code translation file in memory.
 	 * 
-	 * @param $language 2 letter language code. If not specified, will detect current user translation, or load default translation.
+	 * @param string $language 2 letter language code. If not specified, will detect current user translation, or load default translation.
 	 * @return void
 	 */
 	public function loadCoreTranslation($language = false)
@@ -127,6 +127,7 @@ class Piwik_Translate
 	{
 		return Zend_Registry::get('config')->General->default_language;
 	}
+	
 	/**
 	 * Generate javascript translations array
 	 * 

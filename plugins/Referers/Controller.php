@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4053 2011-03-10 04:05:39Z matt $
+ * @version $Id: Controller.php 4126 2011-03-18 07:29:59Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Referers
@@ -360,7 +360,8 @@ function DisplayTopKeywords($url = "")
 	$keywords = @unserialize(file_get_contents($api));
 	if($keywords === false || isset($keywords["result"])) {
 		// DEBUG ONLY: uncomment for troubleshooting an empty output (the URL output reveals the token_auth) 
-		// echo "Error while fetching the <a href=\'$api\'>Top Keywords from Piwik</a>"; return; 
+		// echo "Error while fetching the <a href=\'$api\'>Top Keywords from Piwik</a>"; 
+		return; 
 	}
 
 	// Display the list in HTML

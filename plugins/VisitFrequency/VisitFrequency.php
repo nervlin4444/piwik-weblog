@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: VisitFrequency.php 3872 2011-02-12 21:10:13Z matt $
+ * @version $Id: VisitFrequency.php 4392 2011-04-11 00:55:30Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitFrequency
@@ -61,6 +61,7 @@ class Piwik_VisitFrequency extends Piwik_Plugin
 //    			'bounce_count_returning',
 			),
 			'processedMetrics' => false,
+			'order' => 40
 		);
 	}
 

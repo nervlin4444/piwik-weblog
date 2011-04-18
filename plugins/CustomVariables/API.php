@@ -4,13 +4,14 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3882 2011-02-13 09:48:43Z matt $
+ * @version $Id: API.php 4448 2011-04-14 08:20:49Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CustomVariables
  */
 
 /**
+ * The Custom Variables API lets you access reports for your <a href='http://piwik.org/docs/custom-variables/' target='_blank'>Custom Variables</a> names and values.
  * 
  * @package Piwik_CustomVariables
  */
@@ -31,7 +32,7 @@ class Piwik_CustomVariables_API
 	{
 	    $dataTable = Piwik_Archive::getDataTableFromArchive('CustomVariables_valueByName', $idSite, $period, $date, $segment, $expanded, $idSubtable);
 		$dataTable->filter('Sort', array(Piwik_Archive::INDEX_NB_VISITS, 'desc', $naturalSort = false, $expanded));
-		$dataTable->queueFilter('ReplaceColumnNames', array($expanded));
+		$dataTable->queueFilter('ReplaceColumnNames');
 	    return $dataTable;
 	}
 

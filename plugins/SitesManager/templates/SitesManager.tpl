@@ -87,11 +87,17 @@ vertical-align:middle;
 {ajaxErrorDiv}
 {ajaxLoadingDiv}
 
+{capture assign=createNewWebsite}
+	<div class="addRowSite"><img src='plugins/UsersManager/images/add.png' alt="" /> {'SitesManager_AddSite'|translate}</div>
+{/capture}
 
 {if $adminSites|@count == 0}
 	{'SitesManager_NoWebsites'|translate}
 {else}
 	<div class="entityContainer">
+	{if $isSuperUser} 
+		{$createNewWebsite}	
+	{/if}
 	<table class="entityTable dataTable" id="editSites">
 		<thead>
 			<tr>
@@ -112,7 +118,7 @@ vertical-align:middle;
 			<tr id="row{$i}">
 				<td id="idSite">{$site.idsite}</td>
 				<td id="siteName" class="editableSite">{$site.name}</td>
-				<td id="urls" class="editableSite">{foreach from=$site.alias_urls item=url}{$url}<br />{/foreach}</td>       
+				<td id="urls" class="editableSite">{foreach from=$site.alias_urls item=url}{$url|replace:"http://":""}<br />{/foreach}</td>       
 				<td id="excludedIps" class="editableSite">{foreach from=$site.excluded_ips item=ip}{$ip}<br />{/foreach}</td>       
 				<td id="excludedQueryParameters" class="editableSite">{foreach from=$site.excluded_parameters item=parameter}{$parameter}<br />{/foreach}</td>       
 				<td id="timezone" class="editableSite">{$site.timezone}</td>
@@ -125,7 +131,7 @@ vertical-align:middle;
 		</tbody>
 	</table>
 	{if $isSuperUser}	
-	<div class="addRowSite"><img src='plugins/UsersManager/images/add.png' alt="" /> {'SitesManager_AddSite'|translate}</div>
+		{$createNewWebsite}	
 	{/if}
 	</div>
 {/if}

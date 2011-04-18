@@ -1,4 +1,4 @@
-<?php 
+<?php
 $translations = array(
 	'General_Locale' => 'el_GR.UTF-8',
 	'General_TranslatorName' => 'Jim Black www.jblack.info, Γεώργιος Τέλλος OnSite.Net VoIP & IT Solutions, Παναγιώτης Παπάζογλου Δρ. Δασολόγος-Περιβαλλοντολόγος',
@@ -515,7 +515,7 @@ $translations = array(
 	'Installation_Installation' => 'Εγκατάσταση',
 	'Installation_InstallationStatus' => 'Κατάσταση εγκατάστασης',
 	'Installation_PercentDone' => '%s %% Ολοκληρώθηκε',
-	'Installation_NoConfigFound' => 'Το αρχείο ρυθμίσεων του Piwik δεν βρέθηκε και προσπαθείτε να ανοίξετε μια σελίδα Piwik.<br /><b>  » Μπορείτε να <a href=&#039;index.php&#039;>εγκαταστήσετε το Piwik τώρα</a></b><br /><small>αν έχετε εγκαταστήσει το Piwik προηγούμενα και έχετε κάποιους πίνακες στη βάση δεδομένων σας, μην ανησυχείτε, μπορείτε να χρησιμοποιήσετε ξανά τους ίδους πίνακες και να διατηρείσετε τα υπάρχοντα δεδομένα σας!</small>',
+	'Installation_NoConfigFound' => 'Το αρχείο ρυθμίσεων του Piwik δεν βρέθηκε και προσπαθείτε να ανοίξετε μια σελίδα Piwik.<br /><b>  » Μπορείτε να <a href=\'index.php\'>εγκαταστήσετε το Piwik τώρα</a></b><br /><small>αν έχετε εγκαταστήσει το Piwik προηγούμενα και έχετε κάποιους πίνακες στη βάση δεδομένων σας, μην ανησυχείτε, μπορείτε να χρησιμοποιήσετε ξανά τους ίδους πίνακες και να διατηρείσετε τα υπάρχοντα δεδομένα σας!</small>',
 	'Installation_DatabaseSetup' => 'Εγκατάσταση βάσης δεδομένων',
 	'Installation_DatabaseSetupServer' => 'Διακομιστής βάσης δεδομένων',
 	'Installation_DatabaseSetupLogin' => 'Όνομα χρήστη',
@@ -755,7 +755,7 @@ $translations = array(
 	'SitesManager_ListOfQueryParametersToBeExcludedOnAllWebsites' => 'Οι παράμετροι Ερωτήματος URLs παρακάτω θα αποκλειστούν από URLs σε όλες τις ιστοσελίδες.',
 	'SitesManager_ListOfQueryParametersToExclude' => 'Εισάγετε τον κατάλογο των Παραμέτρων Ερωτημάτων URL, ένα ανά γραμμή, για να αποκλειστεί από τις αναφορές Σελίδας URLs.',
 	'SitesManager_PiwikWillAutomaticallyExcludeCommonSessionParameters' => 'Το Piwik θα αποκλείσει αυτόματα τις παραμέτρους κοινής συνεδρίας (%s).',
-	'SitesManager_HelpExcludedIps' => 'Εισάγετε τον κατάλογο των IPs, ένα ανά γραμμή, που επιθυμείτε να αποκλείσετε από την ανίχνευση του Piwik. Μπορείτε να χρησιμοποιήσετε χαρακτήρες μπαλαντέρ, π.χ. %1$s ή %2$s ',
+	'SitesManager_HelpExcludedIps' => 'Εισάγετε τον κατάλογο των IPs, ένα ανά γραμμή, που επιθυμείτε να αποκλείσετε από την ανίχνευση του Piwik. Μπορείτε να χρησιμοποιήσετε χαρακτήρες μπαλαντέρ, π.χ. %1$s ή %2$s',
 	'SitesManager_YourCurrentIpAddressIs' => 'Η τρέχουσα διεύθυνση IP είναι %s',
 	'SitesManager_SelectACity' => 'Επιλέξτε πόλη',
 	'SitesManager_ChooseCityInSameTimezoneAsYou' => 'Επιλέξτε μια πόλη στην ίδια ζώνη ώρας όπως εσείς.',
@@ -773,15 +773,14 @@ $translations = array(
 	'TranslationsAdmin_PluginDescription' => 'Βοηθήστε να μεταφραστεί το Piwik στη γλώσσα σας.',
 	'TranslationsAdmin_MenuTranslations' => 'Μεταφράσεις',
 	'TranslationsAdmin_MenuLanguages' => 'Γλώσσες',
+	'TranslationsAdmin_LanguageCode' => 'Κωδικός γλώσσας',
 	'TranslationsAdmin_Plugin' => 'Πρόσθετο',
 	'TranslationsAdmin_Definition' => 'Ορισμός',
 	'TranslationsAdmin_DefaultString' => 'Προεπιλεγμένο αλφαριθμητικό (Αγγλικά)',
 	'TranslationsAdmin_TranslationString' => 'Μεταφρασμένο αλφαριθμητικό (τρέχουσα γλώσσα: %s)',
 	'TranslationsAdmin_Translations' => 'Μεταφράσεις',
 	'TranslationsAdmin_FixPermissions' => 'Διορθώστε τα δικαιώματα του συστήματος αρχείων',
-	'TranslationsAdmin_AvailableLanguages' => 'Διαθέσιμες γλώσσες',
 	'TranslationsAdmin_AddLanguage' => 'Προσθήκη γλώσσας',
-	'TranslationsAdmin_LanguageCode' => 'Κωδικός γλώσσας',
 	'TranslationsAdmin_Export' => 'Εξαγωγή γλώσσας',
 	'TranslationsAdmin_Import' => 'Εισαγωγή γλώσσας',
 	'TranslationsAdmin_ShowOnlyEmpty' => 'Προβολή μόνο μεταφράσεων που λείπουν',
@@ -1139,7 +1138,6 @@ $translations = array(
 	'UsersManager_ExceptionLoginExists' => 'Ο χρήστης «%s» υπάρχει ήδη.',
 	'UsersManager_ExceptionEmailExists' => 'Χρήστης με την ηλεκτρονική διεύθυνση «%s» υπάρχει ήδη.',
 	'UsersManager_ExceptionInvalidLoginFormat' => 'Η σύνδεση πρέπει να είναι μεταξύ %1$s και %2$s χαρακτήρες και να περιέχει μόνο γράμματα, αριθμούς ή τους χαρακτήρες «_» ή «-» ή «.»',
-	'UsersManager_ExceptionInvalidPassword' => 'Το μήκος του κωδικού πρέπει να είναι από 6 χαρακτήρες ως 26.',
 	'UsersManager_ExceptionInvalidEmail' => 'Η ηλεκτρονική διεύθυνση δεν φαίνεται να είναι σωστή.',
 	'UsersManager_ExceptionDeleteDoesNotExist' => 'Ο χρήστης «%s» δεν υπάρχει και άρα δεν μπορεί να διαγραφεί.',
 	'UsersManager_ExceptionAdminAnonymous' => 'Δεν μπορείτε να δώσετε διακαιώματα διαχειριστή στον «ανώνυμο» χρήστη.',
@@ -1156,7 +1154,7 @@ $translations = array(
 	'VisitFrequency_ColumnBounceRateForReturningVisits' => 'Βαθμός απομάκρυνσης για Επιστρεφόμενες Επισκέψεις',
 	'VisitFrequency_ColumnAvgActionsPerReturningVisit' => 'Μέσος αριθμός Δραστηριοτήτων ανά Επιστρεφόμενη επίσκεψη',
 	'VisitFrequency_ReturnVisits' => '%s επιστρεφόμενες επισκέψεις',
-	'VisitFrequency_ReturnActions' => '%s ενέργειες από τις επιστρεφόμενες επισκέψεις ',
+	'VisitFrequency_ReturnActions' => '%s ενέργειες από τις επιστρεφόμενες επισκέψεις',
 	'VisitFrequency_ReturnAvgActions' => '%s δραστηριότητες ανά επιστρεφόμενη επίσκεψη',
 	'VisitFrequency_ReturnAverageVisitDuration' => '%s μέση διάρκεια επισκέψεων για επιστρεφόμενους Επισκέπτες',
 	'VisitFrequency_ReturnBounceRate' => '%s επιστρεφόμενες επισκέψεις έχουν απομακρυνθεί (αφήσαν την ιστοσελίδα μετά από μια σελίδα)',
@@ -1239,4 +1237,7 @@ $translations = array(
 	'PDFReports_AreYouSureYouWantToDeleteReport' => 'Θέλετε σίγουρα να διαγράψετε αυτή την Αναφορά PDF και τον προγραμματισμό της;',
 	'PDFReports_ThereIsNoPDFReportToManage' => 'Δεν υπάρχει Αναφορά PDf προς διαχείριση για την ιστοσελίδα %s',
 	'PDFReports_YouMustBeLoggedIn' => 'Πρέπει να έχετε συνδεθεί για να δημιουργήσετε και προγραμματίσετε προσαρμοσμένες Αναφορές PDF.',
+
+	// FOR REVIEW
+	'TranslationsAdmin_AvailableLanguages' => 'Διαθέσιμες γλώσσες',
 );

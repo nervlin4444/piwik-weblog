@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: View.php 3919 2011-02-17 02:39:20Z matt $
+ * @version $Id: View.php 4311 2011-04-04 18:49:55Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -315,8 +315,8 @@ class Piwik_View implements Piwik_iView
 	/**
 	 * View factory method
 	 *
-	 * @param $templateName Template name (e.g., 'index')
-	 * @param $viewType     View type (e.g., Piwik_View::CLI)
+	 * @param string $templateName Template name (e.g., 'index')
+	 * @param int $viewType     View type (e.g., Piwik_View::CLI)
 	 */
 	static public function factory( $templateName = null, $viewType = null)
 	{

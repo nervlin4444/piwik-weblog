@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3641 2011-01-05 20:37:10Z vipsoft $
+ * @version $Id: Controller.php 4336 2011-04-06 01:52:11Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_UserCountryMap
@@ -18,15 +18,21 @@ class Piwik_UserCountryMap_Controller extends Piwik_Controller
 {
 	function worldMap()
 	{
-		$view = Piwik_View::factory('worldmap');
+		$idSite = Piwik_Common::getRequestVar('idSite', 1, 'int');
+		Piwik::checkUserHasViewAccess($idSite);
 		
+		$period = Piwik_Common::getRequestVar('period');
+		$date = Piwik_Common::getRequestVar('date');
+		$token_auth = Piwik::getCurrentUserTokenAuth();
+		
+		$view = Piwik_View::factory('worldmap');
 		$view->dataUrl = "?module=API"
 			. "&method=API.getProcessedReport&format=XML"
 			. "&apiModule=UserCountry&apiAction=getCountry"
-			. "&idSite=" . Piwik_Common::getRequestVar('idSite', 1, 'int')
-			. "&period=" . Piwik_Common::getRequestVar('period')
-			. "&date=" . Piwik_Common::getRequestVar('date')
-			. "&token_auth=" . Piwik::getCurrentUserTokenAuth()
+			. "&idSite=" . $idSite
+			. "&period=" . $period
+			. "&date=" . $date
+			. "&token_auth=" . $token_auth
 			. "&filter_limit=-1";
 		
 		// definition of the color scale
@@ -40,10 +46,10 @@ class Piwik_UserCountryMap_Controller extends Piwik_Controller
 		$request = new Piwik_API_Request(
 			'method=API.getMetadata&format=PHP'
 			. '&apiModule=UserCountry&apiAction=getCountry'
-			. '&idSite=' . Piwik_Common::getRequestVar('idSite', 1, 'int')
-			. '&period=' . Piwik_Common::getRequestVar('period')
-			. '&date=' . Piwik_Common::getRequestVar('date')
-			. '&token_auth=' . Piwik::getCurrentUserTokenAuth()
+			. '&idSite=' . $idSite
+			. '&period=' . $period
+			. '&date=' . $date
+			. '&token_auth=' . $token_auth
 			. '&filter_limit=-1'
 		);
 		$metaData = $request->process();

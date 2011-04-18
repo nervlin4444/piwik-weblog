@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Period.php 3755 2011-01-16 11:39:35Z matt $
+ * @version $Id: Period.php 4311 2011-04-04 18:49:55Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -30,7 +30,7 @@ abstract class Piwik_Period
 	protected $subperiodsProcessed = false;
 	protected $label = null;
 	protected $date = null;
-	static protected $errorAvailablePeriods = 'day, week, month, year';
+	static protected $errorAvailablePeriods = 'day, week, month, year, range';
 	
 	public function __construct( $date )
 	{	
@@ -39,8 +39,8 @@ abstract class Piwik_Period
 	}
 	
 	/**
-	 * @param $strPeriod "day", "week", "month", "year"
-	 * @param $date Piwik_Date object
+	 * @param string $strPeriod "day", "week", "month", "year"
+	 * @param Piwik_Date $date Piwik_Date object
 	 * @return Piwik_Period
 	 */
 	static public function factory($strPeriod, Piwik_Date $date)

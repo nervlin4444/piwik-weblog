@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Login.php 3711 2011-01-12 01:39:59Z vipsoft $
+ * @version $Id: Login.php 4406 2011-04-11 16:17:23Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_Login
@@ -136,6 +136,6 @@ class Piwik_Login extends Piwik_Plugin
 		$cookie->setHttpOnly(true);
 		$cookie->save();
 
-		Piwik_Session::regenerateId();
+		@Piwik_Session::regenerateId();
 	}
 }

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Site.php 3896 2011-02-14 04:46:29Z matt $
+ * @version $Id: Site.php 4330 2011-04-05 18:59:56Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -27,6 +27,11 @@ class Piwik_Site
 		{
 			self::$infoSites[$this->id] = Piwik_SitesManager_API::getInstance()->getSiteFromId($idsite);
 		}
+	}
+	
+	public static function setSites($sites)
+	{
+		self::$infoSites = $sites;
 	}
 	
 	function __toString()
@@ -59,10 +64,11 @@ class Piwik_Site
 	{
 		if(!isset(self::$infoSites[$this->id][$name]))
 		{
-			throw new Exception('Requested field '.$name .' was not loaded in website '.(int)$this->id.'. ');
+			throw new Exception('The requested website id = '.(int)$this->id.' couldn\'t be found');
 		}
 		return self::$infoSites[$this->id][$name];
 	}
+
 	function getCreationDate()
 	{
 		$date = $this->get('ts_created');

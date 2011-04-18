@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Mysqli.php 3717 2011-01-12 07:19:46Z vipsoft $
+ * @version $Id: Mysqli.php 4294 2011-04-03 03:47:59Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -18,6 +18,8 @@ class Piwik_Db_Adapter_Mysqli extends Zend_Db_Adapter_Mysqli implements Piwik_Db
 {
 	public function __construct($config)
 	{
+		// Enable LOAD DATA INFILE
+		$config['driver_options'][MYSQLI_OPT_LOCAL_INFILE] = true; 
 		parent::__construct($config);
 	}
 

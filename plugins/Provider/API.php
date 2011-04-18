@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3870 2011-02-12 13:34:53Z matt $
+ * @version $Id: API.php 4448 2011-04-14 08:20:49Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Provider
@@ -16,6 +16,7 @@
 require_once PIWIK_INCLUDE_PATH . '/plugins/Provider/functions.php';
 
 /**
+ * The Provider API lets you access reports for your visitors Internet Providers.
  * 
  * @package Piwik_Provider
  */

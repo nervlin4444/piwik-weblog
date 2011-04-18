@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Filter.php 3764 2011-01-17 02:19:39Z matt $
+ * @version $Id: Filter.php 4169 2011-03-23 01:59:57Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -34,10 +34,21 @@ abstract class Piwik_DataTable_Filter
 		}
 	}
 	
-	abstract protected function filter($table);
+	abstract public function filter($table);
+	
+	protected $enableRecursive = false;
+	
+	public function enableRecursive($bool)
+	{
+		$this->enableRecursive = (bool)$bool;
+	}
 	
 	public function filterSubTable(Piwik_DataTable_Row $row)
 	{
+		if(!$this->enableRecursive)
+		{
+			return;
+		}
 		try {
 			$subTable = Piwik_DataTable_Manager::getInstance()->getTable( $row->getIdSubDataTable() );
 			$this->filter($subTable);

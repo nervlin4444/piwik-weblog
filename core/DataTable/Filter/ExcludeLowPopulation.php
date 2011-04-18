@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ExcludeLowPopulation.php 3764 2011-01-17 02:19:39Z matt $
+ * @version $Id: ExcludeLowPopulation.php 4169 2011-03-23 01:59:57Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -40,7 +40,6 @@ class Piwik_DataTable_Filter_ExcludeLowPopulation extends Piwik_DataTable_Filter
 			$minimumValue = $sumValues * $minimumPercentageThreshold;
 		}
 		self::$minimumValue = $minimumValue;
-		$this->filter($table);
 	}
 	
 	function filter($table)

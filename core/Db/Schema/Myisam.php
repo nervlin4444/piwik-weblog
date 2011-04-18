@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Myisam.php 3892 2011-02-14 03:40:45Z matt $
+ * @version $Id: Myisam.php 4369 2011-04-08 04:44:20Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -105,6 +105,7 @@ class Piwik_Db_Schema_Myisam implements Piwik_Db_Schema_Interface
 							  `pattern` varchar(255) NOT NULL,
 							  `pattern_type` varchar(10) NOT NULL,
 							  `case_sensitive` tinyint(4) NOT NULL,
+							  `allow_multiple` tinyint(4) NOT NULL,
 							  `revenue` float NOT NULL,
 							  `deleted` tinyint(4) NOT NULL default '0',
 							  PRIMARY KEY  (`idsite`,`idgoal`)
@@ -219,8 +220,9 @@ class Piwik_Db_Schema_Myisam implements Piwik_Db_Schema_Interface
 							  custom_var_k5 VARCHAR(50) DEFAULT NULL,
 							  custom_var_v5 VARCHAR(50) DEFAULT NULL,
 							  PRIMARY KEY(idvisit),
-							  INDEX index_idsite_idvisit (idsite, idvisit),
-							  INDEX index_idsite_datetime_config (idsite, visit_last_action_time, config_id)
+							  INDEX index_idsite_config_datetime (idsite, config_id, visit_last_action_time),
+							  INDEX index_idsite_datetime (idsite, visit_last_action_time),
+							  INDEX index_idsite_idvisitor (idsite, idvisitor)
 							)  DEFAULT CHARSET=utf8
 			",
 
@@ -243,6 +245,7 @@ class Piwik_Db_Schema_Myisam implements Piwik_Db_Schema_Interface
 									  url text NOT NULL,
 									  idgoal int(10) unsigned NOT NULL,
 									  revenue float default NULL,
+									  buster int unsigned NOT NULL,
         							  custom_var_k1 VARCHAR(50) DEFAULT NULL,
         							  custom_var_v1 VARCHAR(50) DEFAULT NULL,
         							  custom_var_k2 VARCHAR(50) DEFAULT NULL,
@@ -253,7 +256,7 @@ class Piwik_Db_Schema_Myisam implements Piwik_Db_Schema_Interface
         							  custom_var_v4 VARCHAR(50) DEFAULT NULL,
         							  custom_var_k5 VARCHAR(50) DEFAULT NULL,
         							  custom_var_v5 VARCHAR(50) DEFAULT NULL,
-									  PRIMARY KEY  (idvisit, idgoal),
+									  PRIMARY KEY (idvisit, idgoal, buster),
 									  INDEX index_idsite_datetime ( idsite, server_time )
 									) DEFAULT CHARSET=utf8
 			",
@@ -423,7 +426,7 @@ class Piwik_Db_Schema_Myisam implements Piwik_Db_Schema_Interface
 		{
 			$dbName = Zend_Registry::get('config')->database->dbname;
 		}
-		Piwik_Exec("CREATE DATABASE IF NOT EXISTS ".$dbName);
+		Piwik_Exec("CREATE DATABASE IF NOT EXISTS ".$dbName." DEFAULT CHARACTER SET utf8");
 	}
 
 	/**

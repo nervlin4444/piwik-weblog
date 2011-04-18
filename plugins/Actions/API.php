@@ -4,15 +4,24 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3882 2011-02-13 09:48:43Z matt $
+ * @version $Id: API.php 4448 2011-04-14 08:20:49Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Actions
  */
 
 /**
- * Actions API
- *
+ * The Actions API lets you request reports for all your Visitor Actions: Page URLs, Page titles (Piwik Events),
+ * File Downloads and Clicks on external websites.
+ * 
+ * For example, "getPageTitles" will return all your page titles along with standard <a href='http://piwik.org/docs/analytics-api/reference/#toc-metric-definitions' target='_blank'>Actions metrics</a> for each row.
+ * 
+ * It is also possible to request data for a specific Page Title with "getPageTitle" 
+ * and setting the parameter pageName to the page title you wish to request. 
+ * Similarly, you can request metrics for a given Page URL via "getPageUrl", a Download file via "getDownload" 
+ * and an outlink via "getOutlink".
+ * 
+ * Note: pageName, pageUrl, outlinkUrl, downloadUrl parameters must be URL encoded before you call the API.
  * @package Piwik_Actions
  */
 class Piwik_Actions_API
@@ -32,6 +41,7 @@ class Piwik_Actions_API
 	/**
 	 * Backward compatibility. Fallsback to getPageTitles() instead.
 	 * @deprecated Deprecated since Piwik 0.5
+	 * @ignore
 	 */
 	public function getActions( $idSite, $period, $date, $segment = false, $expanded = false, $idSubtable = false )
 	{
@@ -124,6 +134,10 @@ class Piwik_Actions_API
     		}
 			$searchTree = Piwik_Actions::getActionExplodedNames($searchedString, $actionType);
 		}
+		if(!($table instanceof Piwik_DataTable))
+		{
+			throw new Exception("For this API function, date=lastN or date=previousM is not supported");
+		}
 		$rows = $table->getRows();
 		$labelSearch = $searchTree[$searchCurrentLevel];
 		$isEndSearch = ((count($searchTree)-1) == $searchCurrentLevel);
@@ -189,7 +203,7 @@ class Piwik_Actions_API
 	{
 		// Must be applied before Sort in this case, since the DataTable can contain both int and strings indexes 
 		// (in the transition period between pre 1.2 and post 1.2 datatable structure)
-		$dataTable->filter('ReplaceColumnNames', array($recursive = true));
+		$dataTable->filter('ReplaceColumnNames');
 		$dataTable->filter('Sort', array('nb_visits', 'desc', $naturalSort = false, $expanded));
 		
 		$dataTable->queueFilter('ReplaceSummaryRowLabel');

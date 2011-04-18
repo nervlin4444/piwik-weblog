@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ResponseBuilder.php 3764 2011-01-17 02:19:39Z matt $
+ * @version $Id: ResponseBuilder.php 4311 2011-04-04 18:49:55Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -133,7 +133,7 @@ class Piwik_API_ResponseBuilder
 	/**
 	 * Returns true if the user requested to serialize the output data (&serialize=1 in the request)
 	 *
-	 * @param $defaultSerializeValue Default value in case the user hasn't specified a value
+	 * @param mixed $defaultSerializeValue Default value in case the user hasn't specified a value
 	 * @return bool
 	 */	
 	protected function caseRendererPHPSerialize($defaultSerializeValue = 1)

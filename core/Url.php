@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Url.php 3872 2011-02-12 21:10:13Z matt $
+ * @version $Id: Url.php 4311 2011-04-04 18:49:55Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -257,7 +257,7 @@ class Piwik_Url
 	 * Given an array of parameters name->value, returns the query string.
 	 * Also works with array values using the php array syntax for GET parameters.
 	 *
-	 * @param $parameters eg. array( 'param1' => 10, 'param2' => array(1,2))
+	 * @param array $parameters eg. array( 'param1' => 10, 'param2' => array(1,2))
 	 * @return string eg. "param1=10&param2[]=1&param2[]=2"
 	 */
 	static public function getQueryStringFromParameters($parameters)

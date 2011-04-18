@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Actions.php 3870 2011-02-12 13:34:53Z matt $
+ * @version $Id: Actions.php 4392 2011-04-11 00:55:30Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Actions
@@ -119,7 +119,8 @@ class Piwik_Actions extends Piwik_Plugin
             'exit_rate' => Piwik_Translate('General_ColumnExitRate'), 
 			// 'entry_bounce_count' => Piwik_Translate('General_ColumnBounces'), 
     	);
-		// Page views URLs, Downloads and Outlinks have the full set of metrics
+
+		// Page views URLs and Page titles have the full set of metrics
 		$reports[] = array(
 			'category' => Piwik_Translate('Actions_Actions'),
 			'name' => Piwik_Translate('Actions_SubmenuPages'),
@@ -128,6 +129,7 @@ class Piwik_Actions extends Piwik_Plugin
     		'dimension' => Piwik_Translate('Actions_ColumnPageURL'),
 			'metrics' => $metrics,
 			'processedMetrics' => false,
+			'order' => 1,
 		);
 
 		$reports[] = array(
@@ -138,9 +140,10 @@ class Piwik_Actions extends Piwik_Plugin
 			'dimension' => Piwik_Translate('Actions_ColumnPageName'),
 			'metrics' => $metrics,
 			'processedMetrics' => false,
+			'order' => 3,
 		);
 		
-		// Page titles, downloads and outlinks only report basic metrics
+		// Outlinks and downloads only report basic metrics
 		$metrics = array(	'nb_hits' => Piwik_Translate('General_ColumnPageviews'),
             				'nb_visits',
     	);
@@ -152,6 +155,7 @@ class Piwik_Actions extends Piwik_Plugin
 			'dimension' => Piwik_Translate('Actions_ColumnClickedURL'),
 			'metrics' => $metrics,
 			'processedMetrics' => false,
+			'order' => 5,
 		);
 		$reports[] = array(
 			'category' => Piwik_Translate('Actions_Actions'),
@@ -161,6 +165,7 @@ class Piwik_Actions extends Piwik_Plugin
 			'dimension' => Piwik_Translate('Actions_ColumnDownloadURL'),
 			'metrics' => $metrics,
 			'processedMetrics' => false,
+			'order' => 7,
 		);
 	}
 	
@@ -604,8 +609,8 @@ class Piwik_Actions extends Piwik_Plugin
 	 * Given a page name and type, builds a recursive datatable where
 	 * each level of the tree is a category, based on the page name split by a delimiter (slash / by default)
 	 *  
-	 * @param $actionName
-	 * @param $actionType
+	 * @param string $actionName
+	 * @param int $actionType
 	 * @return Piwik_DataTable
 	 */
 	protected function parseActionNameCategoriesInDataTable($actionName, $actionType)

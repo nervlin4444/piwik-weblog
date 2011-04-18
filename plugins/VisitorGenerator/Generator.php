@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Generator.php 3803 2011-01-23 20:55:34Z vipsoft $
+ * @version $Id: Generator.php 4389 2011-04-10 23:36:30Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitorGenerator
@@ -283,7 +283,7 @@ class Piwik_VisitorGenerator_Generator
 		
 		// we get the variables name for the campaign parameters
 		$campaigns = array(
-						Piwik_Tracker_Config::getInstance()->Tracker['campaign_var_name']
+						'piwik_campaign'
 		);
 		// we generate a campaign in the URL in 3/18 % of the generated URls
 		$this->addParam('piwik_vars_campaign', $campaigns);
@@ -383,8 +383,8 @@ class Piwik_VisitorGenerator_Generator
 		$this->setCurrentRequest( 'gears' ,$this->getRandom01());
 		$this->setCurrentRequest( 'ag' ,$this->getRandom01());
 		$this->setCurrentRequest( 'cookie',$this->getRandom01());
+		$this->setCurrentRequest( 'cip', mt_rand(0,255).".".mt_rand(0,255).".".mt_rand(0,255).".".mt_rand(0,255));
 
-		$_SERVER['HTTP_CLIENT_IP'] = mt_rand(0,255).".".mt_rand(0,255).".".mt_rand(0,255).".".mt_rand(0,255);
 		$_SERVER['HTTP_USER_AGENT'] = $this->userAgents[mt_rand(0,count($this->userAgents)-1)];
 		$_SERVER['HTTP_ACCEPT_LANGUAGE'] = $this->acceptLanguage[mt_rand(0,count($this->acceptLanguage)-1)];
 	}
@@ -424,11 +424,10 @@ class Piwik_VisitorGenerator_Generator
 			$url .= '?'. $urlVars . '=' . $urlValue;
 			
 			// for a campaign of the CPC kind, we sometimes generate a keyword 
-			if($urlVars == Piwik_Tracker_Config::getInstance()->Tracker['campaign_var_name']
+			if($urlVars == 'piwik_campaign'
 				&& mt_rand(0,1)==0)
 			{
-				$url .= '&'. Piwik_Tracker_Config::getInstance()->Tracker['campaign_keyword_var_name'] 
-							. '=' . $this->getRandomString(6,3,'ALL');;
+				$url .= '&piwik_campaign=' . $this->getRandomString(6,3,'ALL');;
 			}
 		}
 		else
@@ -586,12 +585,12 @@ class Piwik_VisitorGenerator_Generator
 	{		
 		if(!isset($this->allget[$name]))
 		{
-			throw new exception("You are asking for $name which doesnt exist");
+			throw new Exception("You are asking for $name which doesnt exist");
 		}
 		else
 		{
 			$index = mt_rand(0,count($this->allget[$name])-1);
-			$value =$this->allget[$name][$index];
+			$value = $this->allget[$name][$index];
 			return $value;
 		}
 	}

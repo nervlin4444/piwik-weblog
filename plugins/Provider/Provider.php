@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Provider.php 3911 2011-02-15 08:23:40Z matt $
+ * @version $Id: Provider.php 4409 2011-04-11 20:54:07Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Provider
@@ -52,6 +52,7 @@ class Piwik_Provider extends Piwik_Plugin
 			'module' => 'Provider',
 			'action' => 'getProvider',
 			'dimension' => Piwik_Translate('Provider_ColumnProvider'),
+			'order' => 50
 		);
 	}
 
@@ -149,14 +150,18 @@ class Piwik_Provider extends Piwik_Plugin
 		
 		$hostname = $this->getHost($visitorInfo['location_ip']);
 		$hostnameExtension = $this->getCleanHostname($hostname);
-		
+
 		// add the provider value in the table log_visit
 		$visitorInfo['location_provider'] = $hostnameExtension;
 		$visitorInfo['location_provider'] = substr($visitorInfo['location_provider'], 0, 100);
 
 		// improve the country using the provider extension if valid
 		$hostnameDomain = substr($hostnameExtension, 1 + strrpos($hostnameExtension, '.'));
-		if(in_array($hostnameDomain, Piwik_Common::getCountriesList()))
+		if($hostnameDomain == 'uk')
+		{
+			$hostnameDomain = 'gb';
+		}
+		if(array_key_exists($hostnameDomain, Piwik_Common::getCountriesList()))
 		{
 			$visitorInfo['location_country'] = $hostnameDomain;
 		}

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: iUnzip.php 3312 2010-11-13 04:26:27Z vipsoft $
+ * @version $Id: Interface.php 4297 2011-04-03 19:31:58Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -14,8 +14,9 @@
  * Unzip interface
  *
  * @package Piwik
+ * @subpackage Piwik_Unzip
  */
-interface Piwik_iUnzip
+interface Piwik_Unzip_Interface
 {
 	/**
 	 * Constructor

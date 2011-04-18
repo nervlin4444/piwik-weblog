@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Option.php 4030 2011-03-05 18:28:08Z vipsoft $
+ * @version $Id: Option.php 4303 2011-04-04 00:50:42Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -90,7 +90,7 @@ class Piwik_Option
 	 */
 	public function delete($name, $value = null)
 	{
-		$sql = 'DELETE FROM '. Piwik_Common::prefixTable('option') . ' WHERE option_name = ?';
+		$sql = 'DELETE FROM `'. Piwik_Common::prefixTable('option') . '` WHERE option_name = ?';
 		$bind[] = $name;
 
 		if(isset($value))

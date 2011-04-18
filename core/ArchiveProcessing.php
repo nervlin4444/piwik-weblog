@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ArchiveProcessing.php 3911 2011-02-15 08:23:40Z matt $
+ * @version $Id: ArchiveProcessing.php 4341 2011-04-06 03:56:38Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -136,7 +136,7 @@ abstract class Piwik_ArchiveProcessing
 	 * Period of the current archive
 	 * Can be accessed by plugins (that is why it's public)
 	 * 
-	 * @var $period Piwik_Period
+	 * @var Piwik_Period
 	 */
 	public $period 	= null;
 	
@@ -188,14 +188,14 @@ abstract class Piwik_ArchiveProcessing
 	 *
 	 * @var bool
 	 */
-	protected $debugAlwaysArchive = false;
+	public $debugAlwaysArchive = false;
 	
 	/**
 	 * If the archive has at least 1 visit, this is set to true.
 	 *
 	 * @var bool
 	 */
-	public $isThereSomeVisits = false;
+	public $isThereSomeVisits = null;
 	
 	protected $startTimestampUTC;
 	protected $endTimestampUTC;
@@ -220,17 +220,24 @@ abstract class Piwik_ArchiveProcessing
 		switch($name)
 		{
 			case 'day':
-				$process = new Piwik_ArchiveProcessing_Day();
+				$process = new Piwik_ArchiveProcessing_Day();		
+				$process->debugAlwaysArchive = Zend_Registry::get('config')->Debug->always_archive_data_day;
 			break;
 			
 			case 'week':
 			case 'month':
 			case 'year':
 				$process = new Piwik_ArchiveProcessing_Period();
+				$process->debugAlwaysArchive = Zend_Registry::get('config')->Debug->always_archive_data_period;
+			break;
+
+			case 'range':
+				$process = new Piwik_ArchiveProcessing_Period();
+				$process->debugAlwaysArchive = Zend_Registry::get('config')->Debug->always_archive_data_range;
 			break;
 			
 			default:
-				throw new Exception("Unknown period specified $name");
+				throw new Exception("Unknown Archiving period specified '$name'");
 			break;
 		}
 		return $process;
@@ -238,6 +245,18 @@ abstract class Piwik_ArchiveProcessing
 	
 	const OPTION_TODAY_ARCHIVE_TTL = 'todayArchiveTimeToLive';
 	const OPTION_BROWSER_TRIGGER_ARCHIVING = 'enableBrowserTriggerArchiving';
+
+	static public function getCoreMetrics()
+	{
+		return array(
+			'nb_uniq_visitors', 
+			'nb_visits',
+			'nb_actions', 
+			'sum_visit_length',
+			'bounce_count',
+			'nb_visits_converted',
+		);
+	}
 	
 	static public function setTodayArchiveTimeToLive($timeToLiveSeconds)
 	{
@@ -351,20 +370,24 @@ abstract class Piwik_ArchiveProcessing
 				return false;
 			}
 		}
-		// either
-		// - if the period we're looking for is finished, we look for a ts_archived that 
+		// - if the period we are looking for is finished, we look for a ts_archived that 
 		//   is greater than the last day of the archive 
+		elseif($this->endTimestampUTC <= $this->time)
+		{
+			$minDatetimeArchiveProcessedUTC = $this->endTimestampUTC+1;
+		}
 		// - if the period we're looking for is not finished, we look for a recent enough archive
-		//   recent enough means minDatetimeArchiveProcessedUTC = 00:00:01 this morning
 		else
 		{
-			if($this->endTimestampUTC <= $this->time)
+			$this->temporaryArchive = true;
+			
+			// We choose to only look at archives that are newer than the specified timeout
+			$minDatetimeArchiveProcessedUTC = $this->time - self::getTodayArchiveTimeToLive();
+			
+			// However, if archiving is disabled for this request, we shall 
+			// accept any archive that was processed today after 00:00:01 this morning
+			if($this->isArchivingDisabled())
 			{
-				$minDatetimeArchiveProcessedUTC = $this->endTimestampUTC+1;
-			}
-			else
-			{
-				$this->temporaryArchive = true;
 				$timezone = $this->site->getTimezone();
 				$minDatetimeArchiveProcessedUTC = Piwik_Date::factory(Piwik_Date::factory('now', $timezone)->getDateStartUTC())->setTimezone($timezone)->getTimestamp();
 			}
@@ -384,10 +407,13 @@ abstract class Piwik_ArchiveProcessing
 	public function loadArchive()
 	{
 		$this->init();
+		if($this->debugAlwaysArchive)
+		{
+			return false;
+		}
 		$this->idArchive = $this->isArchived();
 	
-		if($this->idArchive === false
-			||	$this->debugAlwaysArchive)
+		if($this->idArchive === false)
 		{
 			return false;
 		}
@@ -412,12 +438,15 @@ abstract class Piwik_ArchiveProcessing
 	 */
 	abstract protected function compute();
 	
+	abstract public function isThereSomeVisits();
+	
 	protected function getDoneStringFlag($flagArchiveAsAllPlugins = false)
 	{
 		$segment = $this->getSegment()->getHash();
-		if(!empty($segment))
+		if(!$this->shouldProcessReportsAllPlugins($this->getSegment(), $this->period))
 		{
-			$pluginProcessed = $this->getPluginBeingProcessed();
+			$pluginProcessed = self::getPluginBeingProcessed($this->getRequestedReport());
+//			Piwik::log("Plugin processed: $pluginProcessed");
 			if(!Piwik_PluginsManager::getInstance()->isPluginLoaded($pluginProcessed)
 				|| $flagArchiveAsAllPlugins 
 				)
@@ -429,26 +458,30 @@ abstract class Piwik_ArchiveProcessing
 	    return 'done' . $segment;
 	}
 	
+	protected function shouldProcessReportsAllPlugins($segment, $period)
+	{
+		return $segment->isEmpty() && $period->getLabel() != 'range';
+	}
+	
 	/**
-	 * When a segment is set, we shall only process the requested report (no more)
-	 * 
-	 * The reasonning is that at the current time, Segmentation being only available via API,
-	 * users will only request one or few reports, not all of them. The requested data sets
-	 * will return a lot faster if we only process these reports rather than all plugins.
+	 * When a segment is set, we shall only process the requested report (no more).
+	 * The requested data set will return a lot faster if we only process these reports rather than all plugins.
+	 * Similarly, when a period=range is requested, we shall only process the requested report for the range itself.
 	 * 
 	 * @param string $pluginName
 	 * @return bool
 	 */
 	public function shouldProcessReportsForPlugin($pluginName)
 	{
-		// No segment: process reports for all plugins
-		if($this->getSegment()->isEmpty())
+		if($this->shouldProcessReportsAllPlugins($this->getSegment(), $this->period))
 		{
 			return true;
 		}
+	
+	
 		// If segment, only process if the requested report belong to this plugin
 		// or process all plugins if the requested report plugin couldn't be guessed
-		$pluginBeingProcessed = $this->getPluginBeingProcessed();
+		$pluginBeingProcessed = self::getPluginBeingProcessed($this->getRequestedReport());
 		return $pluginBeingProcessed == $pluginName
 				|| !Piwik_PluginsManager::getInstance()->isPluginLoaded($pluginBeingProcessed)
 				; 
@@ -471,10 +504,11 @@ abstract class Piwik_ArchiveProcessing
 		{
 			$temporary = 'temporary archive';
 		}
-		Piwik::log("Processing archive '" . $this->period->getLabel() . "', " 
-								."idsite = ". $this->idsite." ($temporary) - " 
-								."segment = ". $this->getSegment()->getString()
-								."UTC datetime [".$this->startDatetimeUTC." -> ".$this->endDatetimeUTC." ]...");
+		Piwik::log("'" . $this->period->getLabel() . "'" 
+								.", idSite = ". $this->idsite." ($temporary)" 
+								.", segment = '". $this->getSegment()->getString()."'"
+								.", report = '". $this->getRequestedReport()."'" 
+								.", UTC datetime [".$this->startDatetimeUTC." -> ".$this->endDatetimeUTC." ]...");
 	}
 	
 	/**
@@ -498,8 +532,6 @@ abstract class Piwik_ArchiveProcessing
 			$flag = Piwik_ArchiveProcessing::DONE_OK_TEMPORARY;
 		}
 		$this->insertNumericRecord($done, $flag);
-		
-//		Piwik_DataTable_Manager::getInstance()->deleteAll();
 	}
 	
 	/**
@@ -555,15 +587,15 @@ abstract class Piwik_ArchiveProcessing
 	{
 		$this->requestedReport = $requestedReport;
 	}
-	
+
 	protected function getRequestedReport()
 	{
-		return $this->requestedReport;
+   		return $this->requestedReport;
 	}
 
-	protected function getPluginBeingProcessed()
+	static public function getPluginBeingProcessed( $requestedReport )
 	{
-		return substr($this->requestedReport, 0, strpos($this->requestedReport, '_'));
+		return substr($requestedReport, 0, strpos($requestedReport, '_'));
 	}
 	
 	/**
@@ -618,59 +650,124 @@ abstract class Piwik_ArchiveProcessing
 	/**
 	 * @param string $name
 	 * @param int|float $value
-	 * @return Piwik_ArchiveProcessing_Record_Numeric
 	 */
 	public function insertNumericRecord($name, $value)
 	{
-		$record = new Piwik_ArchiveProcessing_Record_Numeric($name, $value);
-		$this->insertRecord($record);
-		return $record;
+		return $this->insertRecord($name, $value);
 	}
 	
 	/**
 	 * @param string $name
 	 * @param string|array of string $aValues
-	 * @return true
+	 * @return true 
 	 */
-	public function insertBlobRecord($name, $value)
+	public function insertBlobRecord($name, $values)
 	{
-		if(is_array($value))
+		if(is_array($values))
 		{
-			$records = new Piwik_ArchiveProcessing_RecordArray($name, $value);
-			foreach($records->get() as $record)
+			$clean = array();
+			foreach($values as $id => $value)
 			{
-				$this->insertRecord($record);
+				// for the parent Table we keep the name
+				// for example for the Table of searchEngines we keep the name 'referer_search_engine'
+				// but for the child table of 'Google' which has the ID = 9 the name would be 'referer_search_engine_9'
+				$newName = $name;
+				if($id != 0)
+				{
+					$newName = $name . '_' . $id;
+				}
+				
+				if($this->compressBlob)
+				{
+					$value = $this->compress($value);
+				}
+				$clean[] = array($newName, $value);
 			}
-			destroy($records);
-			return true;
+			return $this->insertBulkRecords($clean);
 		}
-
+		
 		if($this->compressBlob)
 		{
-			$record = new Piwik_ArchiveProcessing_Record_Blob($name, $value);
-		}
-		else
-		{
-			$record = new Piwik_ArchiveProcessing_Record($name, $value);
+			$values = $this->compress($values);
 		}
 
-		$this->insertRecord($record);
-		destroy($record);
+		$this->insertRecord($name, $values);
+		return array($name => $values);
+	}
+	
+	protected function compress($data)
+	{
+		return gzcompress($data);
+	}
+	
+	protected function insertBulkRecords($records)
+	{
+		// Using standard plain INSERT if there is only one record to insert
+		if($DEBUG_DO_NOT_USE_BULK_INSERT = false
+			|| count($records) == 1)
+		{
+			foreach($records as $record)
+			{
+				$this->insertRecord($record[0], $record[1]);
+			}
+			return ;
+		}
+		$bindSql = $this->getBindArray();
+		$count = count($bindSql);
+		$values = array();
+		$table = null;
+		foreach($records as $record)
+		{
+			if(empty($record[1])) continue;
+			$bind = $bindSql;
+			$bind[] = $record[0];
+			$bind[] = $record[1];
+			$values[] = $bind;
+			
+		}
+		if(empty($values)) return ;
+		
+		if(is_null($table))
+		{
+			if(is_numeric($record[1]))
+			{
+				$table = $this->tableArchiveNumeric;
+			}
+			else
+			{
+				$table = $this->tableArchiveBlob;
+			}
+		}
+		Piwik::tableInsertBatch($table->getTableName(), $this->getInsertFields(), $values);
 		return true;
+	}
+	
+	protected function getBindArray()
+	{
+		return array(	$this->idArchive,
+						$this->idsite, 
+						$this->period->getDateStart()->toString('Y-m-d'), 
+						$this->period->getDateEnd()->toString('Y-m-d'), 
+						$this->periodId, 
+						date("Y-m-d H:i:s"));
+	}
+	
+	protected function getInsertFields()
+	{
+		return array('idarchive', 'idsite', 'date1', 'date2', 'period', 'ts_archived', 'name', 'value');
 	}
 	
 	/**
 	 * Inserts a record in the right table (either NUMERIC or BLOB)
 	 *
-	 * @param Piwik_ArchiveProcessing_Record $record
 	 */
-	protected function insertRecord($record)
+	protected function insertRecord($name, $value)
 	{
 		// table to use to save the data
-		if(is_numeric($record->value))
+		if(is_numeric($value))
 		{
     		// We choose not to record records with a value of 0 
-    		if($record->value == 0)
+    		if($value == 0)
     		{
     			return;
     		}
@@ -681,20 +778,15 @@ abstract class Piwik_ArchiveProcessing
 			$table = $this->tableArchiveBlob;
 		}
 		
-		// ignore duplicate idarchive
-		// @see http://dev.piwik.org/trac/ticket/987
+		// duplicate idarchives are Ignored, see http://dev.piwik.org/trac/ticket/987
+		
 		$query = "INSERT IGNORE INTO ".$table->getTableName()." 
-					(idarchive, idsite, date1, date2, period, ts_archived, name, value)
+					(". implode(", ", $this->getInsertFields()).")
 					VALUES (?,?,?,?,?,?,?,?)";
-		$bindSql = array(	$this->idArchive,
-							$this->idsite, 
-							$this->period->getDateStart()->toString('Y-m-d'), 
-							$this->period->getDateEnd()->toString('Y-m-d'), 
-							$this->periodId, 
-							date("Y-m-d H:i:s"),
-							$record->name,
-							$record->value,
-		);
+		$bindSql = $this->getBindArray();
+		$bindSql[] = $name;
+		$bindSql[] = $value;
+//		var_dump($bindSql);
 		Piwik_Query($query, $bindSql);
 	}
 	
@@ -733,6 +825,7 @@ abstract class Piwik_ArchiveProcessing
 		$doneAllPluginsProcessed = $this->getDoneStringFlag($flagArchiveAsAllPlugins = true);
 		
 		$sqlSegmentsFindArchiveAllPlugins = '';
+		
 		if($done != $doneAllPluginsProcessed)
 		{
 			$sqlSegmentsFindArchiveAllPlugins = "OR (name = '".$doneAllPluginsProcessed."' AND value = ".Piwik_ArchiveProcessing::DONE_OK.")
@@ -776,13 +869,19 @@ abstract class Piwik_ArchiveProcessing
 			return false;
 		}
 		
+		if($this->getPluginBeingProcessed($this->getRequestedReport()) == 'VisitsSummary')
+		{
+			$this->isThereSomeVisits = false;
+		}
+		
 		// we look for the nb_visits result for this most recent archive
 		foreach($results as $result)
 		{
 			if($result['name'] == 'nb_visits' 
 				&& $result['idarchive'] == $idarchive)
 			{
-				$this->isThereSomeVisits = ($result['value'] != 0);
+				$this->isThereSomeVisits = ($result['value'] > 0);
+				$this->setNumberOfVisits($result['value']);
 				break;
 			}
 		}
@@ -798,9 +897,8 @@ abstract class Piwik_ArchiveProcessing
 	 */
 	public function isArchivingDisabled()
 	{
-		$segment = $this->getSegment();
-		if(!empty($segment)
-			&& !$segment->isEmpty())
+		// If segment or range is requested, we allow archiving since it will only archive the minimum data
+		if(!$this->shouldProcessReportsAllPlugins($this->getSegment(), $this->period))
 		{
 			return false;
 		}

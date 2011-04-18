@@ -4,14 +4,26 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 4028 2011-03-05 15:05:26Z vipsoft $
+ * @version $Id: API.php 4454 2011-04-14 20:41:16Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_SitesManager
  */
 
 /**
- *
+ * The SitesManager API gives you full control on Websites in Piwik (create, update and delete), and many methods to retrieve websites based on various attributes. 
+ * 
+ * This API lets you create websites via "addSite", update existing websites via "updateSite" and delete websites via "deleteSite".
+ * When creating websites, it can be useful to access internal codes used by Piwik for currencies via "getCurrencyList", or timezones via "getTimezonesList".
+ * 
+ * There are also many ways to request a list of websites: from the website ID via "getSiteFromId" or the site URL via "getSitesIdFromSiteUrl".
+ * Often, the most useful technique is to list all websites that are known to a current user, based on the token_auth, via
+ * "getSitesWithAdminAccess", "getSitesWithViewAccess" or "getSitesWithAtLeastViewAccess" (which returns both).
+ * 
+ * Some methods will affect all websites globally: "setGlobalExcludedIps" will set the list of IPs to be excluded on all websites,
+ * "setGlobalExcludedQueryParameters" will set the list of URL parameters to remove from URLs for all websites.
+ * The existing values can be fetched via "getExcludedIpsGlobal" and "getExcludedQueryParametersGlobal". 
+ * See also the documentation about <a href='http://piwik.org/docs/manage-websites/' target='_blank'>Managing Websites</a> in Piwik.
  * @package Piwik_SitesManager
  */
 class Piwik_SitesManager_API 
@@ -60,7 +72,7 @@ class Piwik_SitesManager_API
 	
 	/**
 	 * Returns all websites belonging to the specified group 
-	 * @param $group string Group name
+	 * @param string $group Group name
 	 */
 	public function getSitesFromGroup($group)
 	{
@@ -136,9 +148,9 @@ class Piwik_SitesManager_API
 	public function getSiteUrlsFromId( $idSite )
 	{
 		Piwik::checkUserHasViewAccess($idSite);
-		$site = $this->getSiteFromId($idSite);
+		$site = new Piwik_Site($idSite);
 		$urls = $this->getAliasSiteUrlsFromId($idSite);
-		return array_merge(array($site['main_url']), $urls);
+		return array_merge(array($site->getMainUrl()), $urls);
 	}
 
 	/**
@@ -253,7 +265,7 @@ class Piwik_SitesManager_API
 		{
 			return array();
 		}
-
+		
 		if($limit)
 		{
 			$limit = "LIMIT " . (int)$limit;		
@@ -318,10 +330,14 @@ class Piwik_SitesManager_API
 	 * 						as Alias URLs for this website.
 	 * @param string Comma separated list of IPs to exclude from the reports (allows wildcards)
 	 * @param string Timezone string, eg. 'Europe/London'
+	 * @param string Currency, eg. 'EUR'
+	 * @param string Website group identifier
+	 * @param string Date at which the statistics for this website will start. Defaults to today's date in YYYY-MM-DD format
+	 * 
 	 * 
 	 * @return int the website ID created
 	 */
-	public function addSite( $siteName, $urls, $excludedIps = null, $excludedQueryParameters = null, $timezone = null, $currency = null, $group = null )
+	public function addSite( $siteName, $urls, $excludedIps = null, $excludedQueryParameters = null, $timezone = null, $currency = null, $group = null, $startDate = null )
 	{
 		Piwik::checkUserIsSuperUser();
 		
@@ -350,13 +366,16 @@ class Piwik_SitesManager_API
 		
 		$bind = array(	'name' => $siteName,
 						'main_url' => $url,
-						'ts_created' => Piwik_Date::now()->getDatetime()
+						
 		);
 	
 		$bind['excluded_ips'] = $this->checkAndReturnExcludedIps($excludedIps);
 		$bind['excluded_parameters'] = $this->checkAndReturnExcludedQueryParameters($excludedQueryParameters);
 		$bind['timezone'] = $timezone;
 		$bind['currency'] = $currency;
+		$bind['ts_created'] = !is_null($startDate) 
+									? Piwik_Date::factory($startDate)->getDatetime()
+									: Piwik_Date::now()->getDatetime();
 		
 		if(!empty($group)
 		    && Piwik::isUserIsSuperUser())
@@ -383,7 +402,8 @@ class Piwik_SitesManager_API
 	
 	private function postUpdateWebsite($idSite)
 	{
-		Piwik_Common::regenerateCacheWebsiteAttributes($idSite);	
+		Piwik_Site::clearCache();
+		Piwik_Common::regenerateCacheWebsiteAttributes($idSite);
 	}
 	
 	/**
@@ -466,8 +486,8 @@ class Piwik_SitesManager_API
 	/**
 	 * Checks that the submitted IPs (comma separated list) are valid
 	 * Returns the cleaned up IPs
-	 * @param $excludedIps 
-	 * 
+	 *
+	 * @param string $excludedIps Comma separated list of IP addresses
 	 * @return array of IPs
 	 */
 	private function checkAndReturnExcludedIps($excludedIps)
@@ -585,7 +605,7 @@ class Piwik_SitesManager_API
 	/**
 	 * Sets the default currency that will be used when creating websites
 	 * 
-	 * @param $defaultCurrency string eg. 'USD'
+	 * @param string $defaultCurrency Currency code, eg. 'USD'
 	 * @return bool
 	 */
 	public function setDefaultCurrency($defaultCurrency)
@@ -615,7 +635,7 @@ class Piwik_SitesManager_API
 	/**
 	 * Sets the default timezone that will be used when creating websites
 	 * 
-	 * @param $defaultTimezone string eg. Europe/Paris or UTC+8
+	 * @param string $defaultTimezone Timezone string eg. Europe/Paris or UTC+8
 	 * @return bool
 	 */
 	public function setDefaultTimezone($defaultTimezone)
@@ -638,12 +658,13 @@ class Piwik_SitesManager_API
 	 * @param string Timezone
 	 * @param string Currency code
 	 * @param string Group name where this website belongs
+	 * @param string Date at which the statistics for this website will start. Defaults to today's date in YYYY-MM-DD format
 	 * 
 	 * @exception if any of the parameter is not correct
 	 * 
 	 * @return bool true on success
 	 */
-	public function updateSite( $idSite, $siteName, $urls = null, $excludedIps = null, $excludedQueryParameters = null, $timezone = null, $currency = null, $group = null)
+	public function updateSite( $idSite, $siteName, $urls = null, $excludedIps = null, $excludedQueryParameters = null, $timezone = null, $currency = null, $group = null, $startDate = null)
 	{
 		Piwik::checkUserHasAdminAccess($idSite);
 
@@ -685,7 +706,10 @@ class Piwik_SitesManager_API
 		{
 		    $bind['group'] = trim($group);
 		}
-		
+		if(!is_null($startDate))
+		{
+			$bind['ts_created'] = Piwik_Date::factory($startDate)->getDatetime();
+		}
 		$bind['excluded_ips'] = $this->checkAndReturnExcludedIps($excludedIps);
 		$bind['excluded_parameters'] = $this->checkAndReturnExcludedQueryParameters($excludedQueryParameters);
 		$bind['name'] = $siteName;
@@ -897,7 +921,7 @@ class Piwik_SitesManager_API
 	 * Tests if the IP is a valid IP, allowing wildcards, except in the first octet.
 	 * Wildcards can only be used from right to left, ie. 1.1.*.* is allowed, but 1.1.*.1 is not.
 	 * 
-	 * @param $ip
+	 * @param string $ip IP address
 	 * @return bool
 	 */
 	private function isValidIp( $ip )
@@ -958,6 +982,10 @@ class Piwik_SitesManager_API
 		foreach($urls as &$url)
 		{
 			$url = $this->removeTrailingSlash($url);
+			if(strpos($url, 'http') !== 0)
+			{
+				$url = 'http://'.$url;
+			}
 		}
 		$urls = array_unique($urls);
 		

@@ -1,11 +1,10 @@
 <?php
-
 /**
  * Piwik - Open source web analytics
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: PDFReports.php 3986 2011-02-28 06:04:30Z vipsoft $
+ * @version $Id: PDFReports.php 4457 2011-04-14 23:59:19Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
@@ -33,9 +32,29 @@ class Piwik_PDFReports extends Piwik_Plugin
 				'TopMenu.add' => 'addTopMenu',
 				'TaskScheduler.getScheduledTasks' => 'getScheduledTasks',
 				'AssetManager.getJsFiles' => 'getJsFiles',
+				'UsersManager.deleteUser' => 'deleteUserReport',
+				'SitesManager.deleteSite' => 'deleteSiteReport',
 		);
 	}
 
+	/**
+	 * Delete reports for the website
+	 *
+	 * @param Event_Notification $notification
+	 */
+	function deleteSiteReport( $notification )
+	{
+		$idSite = &$notification->getNotificationObject();
+
+		$idReports = Piwik_PDFReports_API::getInstance()->getReports($idSite);
+		
+		foreach($idReports as $report)
+		{
+			$idReport = $report['idreport'];
+			Piwik_PDFReports_API::getInstance()->deleteReport($idReport);
+		}
+	}
+	
 	function getJsFiles( $notification )
 	{
 		$jsFiles = &$notification->getNotificationObject();
@@ -113,6 +132,12 @@ class Piwik_PDFReports extends Piwik_Plugin
     	Piwik_AddTopMenu( 'PDFReports_EmailReports', array('module' => 'PDFReports', 'action' => 'index'), true, 13);
     }
 	
+    function deleteUserReport($notification)
+	{
+		$userLogin = $notification->getNotificationObject();
+		Piwik_Query('DELETE FROM ' . Piwik_Common::prefixTable('pdf') . ' WHERE login = ?', $userLogin);
+    }
+    
     function install()
 	{
 		$queries[] = "

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: FrontController.php 3865 2011-02-11 20:17:47Z JulienM $
+ * @version $Id: FrontController.php 4471 2011-04-15 06:13:16Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -72,6 +72,7 @@ class Piwik_FrontController
 			return;
 		}
 
+		
 		if(is_null($module))
 		{
 			$defaultModule = 'CoreHome';
@@ -117,6 +118,7 @@ class Piwik_FrontController
 			$action = $controller->getDefaultAction();
 		}
 		
+//		Piwik::log("Dispatching $module / $action, parameters: ".var_export($parameters, $return = true));
 		if( !is_callable(array($controller, $action)))
 		{
 			throw new Exception("Action $action not found in the controller $controllerClassName.");				
@@ -161,13 +163,7 @@ class Piwik_FrontController
 		try {
 			Piwik::printSqlProfilingReportZend();
 			Piwik::printQueryCount();
-/*		
-			if(Piwik::getModule() !== 'API')
-			{
-				Piwik::printMemoryUsage();
-				Piwik::printTimer();
-			}
- */
+			Piwik::printTimer();
 		} catch(Exception $e) {}
 	}
 	
@@ -181,6 +177,13 @@ class Piwik_FrontController
 	 */
 	function init()
 	{
+		static $initialized = false;
+		if($initialized)
+		{
+			return;
+		}
+		$initialized = true;
+
 		try {
 			Zend_Registry::set('timer', new Piwik_Timer);
 			
@@ -205,6 +208,11 @@ class Piwik_FrontController
 				$exceptionToThrow = $e;
 			}
 
+			if(Zend_Registry::get('config')->General->maintenance_mode == 1)
+			{
+				throw new Exception("Piwik is in scheduled maintenance. Please come back later.");
+			}
+			
 			$pluginsManager = Piwik_PluginsManager::getInstance();
 			$pluginsManager->loadPlugins( Zend_Registry::get('config')->Plugins->Plugins->toArray() );
 
@@ -212,7 +220,6 @@ class Piwik_FrontController
 			{
 				throw $exceptionToThrow;
 			}
-
 
 			try {
 				Piwik::createDatabaseObject();
@@ -246,12 +253,13 @@ class Piwik_FrontController
 
 			Piwik::raiseMemoryLimitIfNecessary();
 			$pluginsManager->postLoadPlugins();
-
 			
 			Piwik_PostEvent('FrontController.checkForUpdates');
 		} catch(Exception $e) {
 			Piwik_ExitWithMessage($e->getMessage(), false, true);
 		}
+		
+		Piwik::log('End FrontController->init() - Request: '. var_export($_REQUEST, true));
 	}
 }
 

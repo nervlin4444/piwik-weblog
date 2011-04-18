@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: UsersManager.php 4031 2011-03-05 18:34:55Z vipsoft $
+ * @version $Id: UsersManager.php 4417 2011-04-12 04:04:15Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UsersManager
@@ -49,9 +49,34 @@ class Piwik_UsersManager extends Piwik_Plugin
 				'AdminMenu.add' => 'addMenu',
 				'AssetManager.getJsFiles' => 'getJsFiles',
 				'SitesManager.deleteSite' => 'deleteSite',
+				'Common.fetchWebsiteAttributes' => 'recordAdminUsersInCache',
 		);
 	}
 
+	
+	/**
+	 * Hooks when a website tracker cache is flushed (website/user updated, cache deleted, or empty cache)
+	 * Will record in the tracker config file the list of Admin token_auth for this website. This 
+	 * will be used when the Tracking API is used with setIp(), setForceDateTime(), setVisitorId(), etc. 
+	 * 
+	 * @param Piwik_Event_Notification $notification
+	 * @return void
+	 */
+	function recordAdminUsersInCache($notification)
+	{
+		$idSite = $notification->getNotificationInfo();
+		// add the 'hosts' entry in the website array
+		$users = Piwik_UsersManager_API::getInstance()->getUsersWithSiteAccess($idSite, 'admin');
+		
+		$tokens = array();
+		foreach($users as $user)
+		{
+			$tokens[] = $user['token_auth'];
+		}
+		$array =& $notification->getNotificationObject();
+		$array['admin_token_auth'] = $tokens;
+	}
+	
 	/**
 	 * Delete user preferences associated with a particular site
 	 *

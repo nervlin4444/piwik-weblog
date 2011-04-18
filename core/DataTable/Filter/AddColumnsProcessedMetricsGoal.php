@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: AddColumnsProcessedMetricsGoal.php 3908 2011-02-15 07:38:16Z matt $
+ * @version $Id: AddColumnsProcessedMetricsGoal.php 4435 2011-04-13 21:53:31Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -39,9 +39,9 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 	 * - nb conversions
 	 * - revenue per visit
 	 * 
-	 * @param $table
-	 * @param $enable should be true (automatically set to true when filter_update_columns_when_show_all_goals is found in the API request)
-	 * @param $processOnlyIdGoal Defines what metrics to add (don't process metrics when you don't display them)
+	 * @param Piwik_DataTable $table
+	 * @param bool $enable should be true (automatically set to true when filter_update_columns_when_show_all_goals is found in the API request)
+	 * @param bool $processOnlyIdGoal Defines what metrics to add (don't process metrics when you don't display them)
 	 * 			If self::GOALS_FULL_TABLE, all Goal metrics (and per goal metrics) will be processed
 	 * 			If self::GOALS_OVERVIEW, only the main goal metrics will be added
 	 * 			If an int > 0, then will process only metrics for this specific Goal
@@ -50,10 +50,12 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 	public function __construct( $table, $enable = true, $processOnlyIdGoal )
 	{
 		$this->processOnlyIdGoal = $processOnlyIdGoal;
+		// Ensure that all rows with no visit but conversions will be displayed
+		$this->deleteRowsWithNoVisit = false;
 		parent::__construct($table);
 	}
 	
-	protected function filter($table)
+	public function filter($table)
 	{
 		// Add standard processed metrics
 		parent::filter($table);
@@ -66,23 +68,15 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 
 			// visits could be undefined when there is a conversion but no visit
 			$nbVisits = (int)$this->getColumn($row, Piwik_Archive::INDEX_NB_VISITS);
-
-//			$newColumns['nb_visits'] = $nbVisits;
-//			$newColumns['label'] = $currentColumns['label'];
-			
-			$goals = $this->getColumn($currentColumns, Piwik_Archive::INDEX_GOALS); 
+			$conversions = (int)$this->getColumn($row, Piwik_Archive::INDEX_NB_CONVERSIONS);
+			$goals = $this->getColumn($currentColumns, Piwik_Archive::INDEX_GOALS);
 			if($goals)
 			{
 				$revenue = (int)$this->getColumn($currentColumns, Piwik_Archive::INDEX_REVENUE);
 				
-				if($nbVisits == 0)
-				{
-					$revenuePerVisit = $this->invalidDivision;
-				}
-				else
-				{
-					$revenuePerVisit = round( $revenue / $nbVisits, $roundingPrecision );
-				}
+				// If no visit for this metric, but some conversions, we still want to display some kind of "revenue per visit" 
+				// even though it will actually be in this edge case "Revenue per conversion"
+				$revenuePerVisit = round( $revenue / ($nbVisits == 0 ? $conversions : $nbVisits), $roundingPrecision );
 				$newColumns['revenue_per_visit'] = $revenuePerVisit;
 				
 				if($this->processOnlyIdGoal == self::GOALS_MINIMAL_REPORT)
@@ -128,14 +122,8 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 					
 					// Goal Revenue per visit
 					$name = 'goal_' . $goalId . '_revenue_per_visit';
-					if($nbVisits == 0)
-					{
-						$revenuePerVisit = $this->invalidDivision;
-					}
-					else
-					{
-						$revenuePerVisit = round( (float)$this->getColumn($columnValue, Piwik_Archive::INDEX_GOAL_REVENUE, Piwik_Archive::$mappingFromIdToNameGoal) / $nbVisits, $roundingPrecision );
-					}
+					// See comment above for $revenuePerVisit
+					$revenuePerVisit = round( (float)$this->getColumn($columnValue, Piwik_Archive::INDEX_GOAL_REVENUE, Piwik_Archive::$mappingFromIdToNameGoal) / ($nbVisits == 0 ? $conversions : $nbVisits), $roundingPrecision );
 					$newColumns[$name] = $revenuePerVisit;
 					$expectedColumns[$name] = true;
 					

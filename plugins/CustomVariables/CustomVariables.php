@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: CustomVariables.php 3907 2011-02-15 01:41:03Z matt $
+ * @version $Id: CustomVariables.php 4392 2011-04-11 00:55:30Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CustomVariables
@@ -66,6 +66,7 @@ class Piwik_CustomVariables extends Piwik_Plugin
         			'module' => 'CustomVariables',
         			'action' => 'getCustomVariables',
         			'dimension' => Piwik_Translate('CustomVariables_ColumnCustomVariableName'),
+        			'order' => 10
         		),
     	));
 	}
@@ -119,7 +120,7 @@ class Piwik_CustomVariables extends Piwik_Plugin
 	/**
 	 * Hooks on daily archive to trigger various log processing
 	 * 
-	 * @param $notification
+	 * @param Piwik_Event_Notification $notification
 	 * @return void
 	 */
 	public function archiveDay( $notification )
@@ -140,7 +141,7 @@ class Piwik_CustomVariables extends Piwik_Plugin
 	}
 	
 	/**
-	 * @param $archiveProcessing
+	 * @param Piwik_ArchiveProcessing $archiveProcessing
 	 * @return void
 	 */
 	protected function archiveDayAggregate(Piwik_ArchiveProcessing $archiveProcessing)
@@ -181,7 +182,7 @@ class Piwik_CustomVariables extends Piwik_Plugin
 	}
 	
 	/**
-	 * @param $archiveProcessing
+	 * @param Piwik_ArchiveProcessing $archiveProcessing
 	 * @return void
 	 */
 	protected function archiveDayRecordInDatabase($archiveProcessing)

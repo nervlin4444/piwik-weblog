@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ColumnDelete.php 3764 2011-01-17 02:19:39Z matt $
+ * @version $Id: ColumnDelete.php 4169 2011-03-23 01:59:57Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -25,10 +25,9 @@ class Piwik_DataTable_Filter_ColumnDelete extends Piwik_DataTable_Filter
 	{
 		parent::__construct($table);
 		$this->columnToDelete = $columnToDelete;
-		$this->filter($table);
 	}
 	
-	protected function filter($table)
+	public function filter($table)
 	{
 		$table->deleteColumn($this->columnToDelete);
 	}

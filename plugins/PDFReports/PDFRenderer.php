@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: PDFRenderer.php 3986 2011-02-28 06:04:30Z vipsoft $
+ * @version $Id: PDFRenderer.php 4415 2011-04-11 22:47:39Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
@@ -13,6 +13,7 @@
 /**
  * @see libs/tcpdf
  */
+require_once PIWIK_INCLUDE_PATH . '/plugins/PDFReports/config/tcpdf_config.php';
 require_once PIWIK_INCLUDE_PATH . '/libs/tcpdf/config/lang/eng.php';
 require_once PIWIK_INCLUDE_PATH . '/libs/tcpdf/tcpdf.php';
 
@@ -30,7 +31,7 @@ class Piwik_PDFReports_PDFRenderer extends TCPDF
 	private $reportWidthPortrait = 180;
 	private $reportWidthLandscape = 270;
 	private $minWidthLabelCell = 100;
-	private $maxColumnCountPortraitOrientation = 7;
+	private $maxColumnCountPortraitOrientation = 6;
 	private $logoWidth = 16;
 	private $logoHeight = 16;
 	private $truncateAfter = 50;
@@ -115,7 +116,7 @@ class Piwik_PDFReports_PDFRenderer extends TCPDF
 		$this->Cell(40, 210, $websiteTitle );
 		$this->Ln(8*4);
 		
-		$dateRange = $this->formatText(Piwik_Translate('General_DateRange')." " . $this->prettyDate);
+		$dateRange = $this->formatText(Piwik_Translate('General_DateRange').": " . $this->prettyDate);
 		$this->SetFont($this->reportFont,'',$this->reportHeaderFontSize);
 		$this->SetTextColor($this->reportTextColor[0],$this->reportTextColor[1],$this->reportTextColor[2]);
 		$this->Cell(40, 210, $dateRange);
@@ -361,7 +362,7 @@ class Piwik_PDFReports_PDFRenderer extends TCPDF
 	/**
 	 * Prints a message
 	 *
-	 * @param $message
+	 * @param string $message
 	 * @return void
 	 */
 	private function paintMessage($message)

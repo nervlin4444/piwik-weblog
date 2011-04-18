@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: UserCountry.php 3870 2011-02-12 13:34:53Z matt $
+ * @version $Id: UserCountry.php 4392 2011-04-11 00:55:30Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UserCountry
@@ -83,7 +83,7 @@ class Piwik_UserCountry extends Piwik_Plugin
 			'module' => 'UserCountry',
 			'action' => 'getCountry',
 			'dimension' => Piwik_Translate('UserCountry_Country'),
-		    ''
+        	'order' => 5,
 		);
 		
 		$reports[] = array(
@@ -92,6 +92,7 @@ class Piwik_UserCountry extends Piwik_Plugin
 			'module' => 'UserCountry',
 			'action' => 'getContinent',
         	'dimension' => Piwik_Translate('UserCountry_Continent'),
+        	'order' => 6,
 		);
 	}
 	

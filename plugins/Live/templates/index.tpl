@@ -14,9 +14,9 @@ function initSpy()
 			ajax: 'index.php?module=Live&idSite={/literal}{$idSite}{if !empty($liveTokenAuth)}&token_auth={$liveTokenAuth}{/if}{literal}&action=getLastVisitsStart',
 			fadeLast: 2,
 			isDupe: check_for_dupe,
-			timeout: 8000,
+			timeout: {/literal}{$liveRefreshAfterMs}{literal},
 			customParameterName: 'minTimestamp',
-			customParameterValueCallback: lastMinTimestamp,
+			customParameterValueCallback: lastMaxTimestamp,
 			fadeInSpeed: 600,
 			appendTo: 'div#content'
 		});
@@ -27,11 +27,6 @@ function initSpy()
 function updateTotalVisits()
 {
 	$("#visitsTotal").load("index.php?module=Live&idSite={/literal}{$idSite}{if !empty($liveTokenAuth)}&token_auth={$liveTokenAuth}{/if}{literal}&action=ajaxTotalVisitors");
-}
-//updates the visit table, to refresh the already presented visitors pages
-function updateVisitBox()
-{
-	$("#visitsLive").load("index.php?module=Live&idSite={/literal}{$idSite}{if !empty($liveTokenAuth)}&token_auth={$liveTokenAuth}{/if}{literal}&action=getLastVisitsStart");
 }
 </script>
 {/literal}

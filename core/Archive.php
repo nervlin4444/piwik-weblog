@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Archive.php 3875 2011-02-12 22:41:00Z matt $
+ * @version $Id: Archive.php 4441 2011-04-14 01:04:49Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -71,6 +71,7 @@ abstract class Piwik_Archive
 	// Goal reports
 	const INDEX_GOAL_NB_CONVERSIONS = 1;
 	const INDEX_GOAL_REVENUE = 2;
+	const INDEX_GOAL_NB_VISITS_CONVERTED = 3;
 
 	public static $mappingFromIdToName = array(
 				Piwik_Archive::INDEX_NB_UNIQ_VISITORS 		=> 'nb_uniq_visitors',
@@ -103,6 +104,7 @@ abstract class Piwik_Archive
 
 	public static $mappingFromIdToNameGoal = array(
 				Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS 	=> 'nb_conversions',
+				Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED 	=> 'nb_visits_converted',
 				Piwik_Archive::INDEX_GOAL_REVENUE 			=> 'revenue',
 	);
 
@@ -157,14 +159,6 @@ abstract class Piwik_Archive
 			$sites = Piwik_Site::getIdSitesFromIdSitesString($idSite);
 		}
 		
-		$segment = Piwik_Common::unsanitizeInputValue($segment);
-		if( !Piwik_Archive::isSegmentationEnabled()
-			&& !empty($segment))
-		{
-			throw new Exception("The Super User has disabled the use of 'segments' for the anonymous user. 
-									Please log in to use Segmentation in the API.");
-		}
-		
 		$segment = new Piwik_Segment($segment, $idSite);
 		
 		// idSite=1,3 or idSite=all
@@ -177,8 +171,9 @@ abstract class Piwik_Archive
 		elseif(is_string($strDate) 
 			&& (
 				preg_match('/^(last|previous){1}([0-9]*)$/', $strDate, $regs)
-				|| preg_match('/^([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}),([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})$/', $strDate, $regs)
+				|| Piwik_Period_Range::parseDateRange($strDate)
 				)
+			&& $period != 'range'
 			)
 		{
 			$oSite = new Piwik_Site($idSite);
@@ -189,26 +184,31 @@ abstract class Piwik_Archive
 		{
 			$oSite = new Piwik_Site($idSite);
 
-			if(is_string($strDate))
+			if($period == 'range')
 			{
-				if($strDate == 'now' || $strDate == 'today')
-				{
-					$strDate = date('Y-m-d', Piwik_Date::factory('now', $oSite->getTimezone())->getTimestamp());
-				}
-				elseif($strDate == 'yesterday' || $strDate == 'yesterdaySameTime')
-				{
-					$strDate = date('Y-m-d', Piwik_Date::factory('now', $oSite->getTimezone())->subDay(1)->getTimestamp());
-				}
-				$oDate = Piwik_Date::factory($strDate);
+				$oPeriod = new Piwik_Period_Range('range', $strDate, $oSite->getTimezone(), Piwik_Date::factory('today', $oSite->getTimezone()));
 			}
 			else
 			{
-				$oDate = $strDate;
+				if(is_string($strDate))
+				{
+					if($strDate == 'now' || $strDate == 'today')
+					{
+						$strDate = date('Y-m-d', Piwik_Date::factory('now', $oSite->getTimezone())->getTimestamp());
+					}
+					elseif($strDate == 'yesterday' || $strDate == 'yesterdaySameTime')
+					{
+						$strDate = date('Y-m-d', Piwik_Date::factory('now', $oSite->getTimezone())->subDay(1)->getTimestamp());
+					}
+					$oDate = Piwik_Date::factory($strDate);
+				}
+				else
+				{
+					$oDate = $strDate;
+				}
+				$date = $oDate->toString();
+				$oPeriod = Piwik_Period::factory($period, $oDate);
 			}
-			$date = $oDate->toString();
-			
-			$oPeriod = Piwik_Period::factory($period, $oDate);
-			
 			$archive = new Piwik_Archive_Single();
 			$archive->setPeriod($oPeriod);
 			$archive->setSite($oSite);

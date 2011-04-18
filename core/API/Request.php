@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Request.php 3865 2011-02-11 20:17:47Z JulienM $
+ * @version $Id: Request.php 4311 2011-04-04 18:49:55Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -132,7 +132,7 @@ class Piwik_API_Request
 	 * the current session will be authenticated using this token_auth.
 	 * It will overwrite the previous Auth object.
 	 * 
-	 * @param $request If null, uses the default request ($_GET)
+	 * @param array $request If null, uses the default request ($_GET)
 	 * @return void
 	 */
 	static public function reloadAuthUsingTokenAuth($request = null)
