@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4488 2011-04-17 00:18:14Z matt $
+ * @version $Id: Controller.php 4497 2011-04-17 20:33:51Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_MultiSites
@@ -16,7 +16,7 @@
  */
 class Piwik_MultiSites_Controller extends Piwik_Controller
 {
-	protected $orderBy = 'names';
+	protected $orderBy = 'visits';
 	protected $order = 'desc';
 	protected $evolutionBy = 'visits';
 	protected $mySites = array();

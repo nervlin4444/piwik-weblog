@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4459 2011-04-15 00:47:11Z matt $
+ * @version $Id: Controller.php 4582 2011-04-28 00:41:46Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -439,11 +439,12 @@ abstract class Piwik_Controller
 		}
 
 		if($websiteId) {
-			header("Location: index.php?module=".$moduleToRedirect
+			$url = "Location: index.php?module=".$moduleToRedirect
 									."&action=".$actionToRedirect
 									."&idSite=".$websiteId
 									."&period=".$defaultPeriod
-									."&date=".$defaultDate);
+									."&date=".$defaultDate;
+			header($url);
 			exit;
 		}
 		
@@ -457,7 +458,7 @@ abstract class Piwik_Controller
 		if(!empty($currentLogin)
 			&& $currentLogin != 'anonymous')
 		{
-			$errorMessage = sprintf(Piwik_Translate('CoreHome_NoPrivileges'),$currentLogin);
+			$errorMessage = sprintf(Piwik_Translate('CoreHome_NoPrivilegesAskPiwikAdmin'), $currentLogin, "<br/><a href='mailto:".Piwik::getSuperUserEmail()."?subject=Access to Piwik for user $currentLogin'>", "</a>");
 			$errorMessage .= "<br /><br />&nbsp;&nbsp;&nbsp;<b><a href='index.php?module=". Zend_Registry::get('auth')->getName() ."&amp;action=logout'>&rsaquo; ". Piwik_Translate('General_Logout'). "</a></b><br />";
 			Piwik_ExitWithMessage($errorMessage, false, true);
 		}

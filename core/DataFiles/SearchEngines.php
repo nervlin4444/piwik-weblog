@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: SearchEngines.php 4484 2011-04-16 19:25:04Z vipsoft $
+ * @version $Id: SearchEngines.php 4531 2011-04-21 12:49:06Z vipsoft $
  *
  * @category Piwik
  * @package DataFiles
@@ -530,6 +530,10 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Jungle Spider
 		'www.jungle-spider.de'		=> array('Jungle Spider', 'q'),
+
+		// Jungle key
+		'junglekey.com'				=> array('Jungle Key', 'query', 'search.php?query={k}&type=web&lang=en'),
+		'junglekey.fr'				=> array('Jungle Key'),
 
 		// Kataweb
 		'www.kataweb.it'			=> array('Kataweb', 'q'),

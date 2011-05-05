@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Controller.php 4588 2011-04-28 10:48:23Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitorInterest
@@ -45,7 +45,7 @@ class Piwik_VisitorInterest_Controller extends Piwik_Controller
 		$view = Piwik_ViewDataTable::factory( 'cloud' );
 		$view->init( $this->pluginName,  __FUNCTION__, "VisitorInterest.getNumberOfVisitsPerPage" );
 		$view->setColumnsToDisplay( array('label','nb_visits') );
-		$view->setSortedColumn( 'nb_visits', 'asc' );
+		$view->setSortedColumn( 'label', 'asc' );
 		$view->setColumnTranslation('label', Piwik_Translate('VisitorInterest_ColumnPagesPerVisit'));
 		$view->disableExcludeLowPopulation();
 		$view->disableOffsetInformationAndPaginationControls();

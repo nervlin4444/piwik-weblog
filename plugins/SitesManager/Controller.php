@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4451 2011-04-14 19:00:39Z vipsoft $
+ * @version $Id: Controller.php 4533 2011-04-22 22:05:46Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_SitesManager
@@ -23,6 +23,7 @@ class Piwik_SitesManager_Controller extends Piwik_Controller_Admin
 	{
 		$view = Piwik_View::factory('SitesManager');
 		$sites = Piwik_SitesManager_API::getInstance()->getSitesWithAdminAccess();
+		$sitesIndexedById = array();
 		foreach($sites as $site)
 		{
 			$sitesIndexedById[$site['idsite']] = $site;
@@ -50,7 +51,7 @@ class Piwik_SitesManager_Controller extends Piwik_Controller_Admin
 		$view->globalExcludedIps = str_replace(',',"\n", $excludedIpsGlobal);
 		$excludedQueryParametersGlobal = Piwik_SitesManager_API::getInstance()->getExcludedQueryParametersGlobal();
 		$view->globalExcludedQueryParameters = str_replace(',',"\n", $excludedQueryParametersGlobal);
-		$view->currentIpAddress = Piwik_Common::getIpString();
+		$view->currentIpAddress = Piwik_IP::getIpFromHeader();
 
 		$this->setBasicVariablesView($view);
 		$view->menu = Piwik_GetAdminMenu();

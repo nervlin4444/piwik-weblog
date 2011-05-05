@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4451 2011-04-14 19:00:39Z vipsoft $
+ * @version $Id: Controller.php 4533 2011-04-22 22:05:46Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_Login
@@ -205,7 +205,7 @@ class Piwik_Login_Controller extends Piwik_Controller
 		// construct a password reset token from user information
 		$resetToken = self::generatePasswordResetToken($user);
 
-		$ip = Piwik_Common::getIpString();
+		$ip = Piwik_IP::getIpFromHeader();
 		$url = Piwik_Url::getCurrentUrlWithoutQueryString() . "?module=Login&action=resetPassword&token=$resetToken";
 
 		// send email with new password
@@ -297,7 +297,7 @@ class Piwik_Login_Controller extends Piwik_Controller
 		$view = Piwik_View::factory('passwordchanged');
 		try
 		{
-			if( $user['email'] == Zend_Registry::get('config')->superuser->email )
+			if( $user['email'] == Piwik::getSuperUserEmail() )
 			{
     			if(!Zend_Registry::get('config')->isFileWritable())
     			{
@@ -332,12 +332,12 @@ class Piwik_Login_Controller extends Piwik_Controller
 		Piwik::setUserIsSuperUser();
 
 		$user = null;
-		if( $loginMail == Zend_Registry::get('config')->superuser->email
+		if( $loginMail == Piwik::getSuperUserEmail()
 			|| $loginMail == Zend_Registry::get('config')->superuser->login )
 		{
 			$user = array(
 					'login' => Zend_Registry::get('config')->superuser->login,
-					'email' => Zend_Registry::get('config')->superuser->email,
+					'email' => Piwik::getSuperUserEmail(),
 					'password' => Zend_Registry::get('config')->superuser->password,
 			);
 		}

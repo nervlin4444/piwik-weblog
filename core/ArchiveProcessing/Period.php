@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Period.php 4255 2011-03-30 22:40:16Z matt $
+ * @version $Id: Period.php 4587 2011-04-28 06:24:46Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -350,21 +350,30 @@ class Piwik_ArchiveProcessing_Period extends Piwik_ArchiveProcessing
 		$numericTable = $this->tableArchiveNumeric->getTableName();
 		
 		$key = 'lastPurge_' . $blobTable;
-		$timestamp = Piwik_GetOption($key); 
-		if(!$timestamp 
-			|| $timestamp < time() - 86400)
+		$timestamp = Piwik_GetOption($key);
+
+		
+		// we shall purge temporary archives after their timeout is finished, plus an extra 2 hours 
+		// in case archiving is disabled and is late to run, we give it this extra time to run and re-process more recent records
+		$temporaryArchivingTimeout = self::getTodayArchiveTimeToLive();
+		$purgeEveryNSeconds = $temporaryArchivingTimeout + 2 * 3600;
+
+		// we only delete archives if we are able to process them, otherwise, the browser might process reports
+		// when &segment= is specified (or custom date range) and would below, delete temporary archives that the 
+		// browser is not able to process until next cron run (which could be more than 1 hour away)
+		if($this->isRequestAuthorizedToArchive()
+			&& (!$timestamp 
+				|| $timestamp < time() - $purgeEveryNSeconds))
 		{
 			Piwik_SetOption($key, time());
 			
-			// we delete out of date daily archives from table, maximum once per day
-			// we only delete archives processed that are older than 1 day, to not delete archives we just processed
-			$yesterday = Piwik_Date::factory('yesterday')->getDateTime();
+			$purgeArchivesOlderThan = Piwik_Date::factory(time() - $purgeEveryNSeconds)->getDateTime();
 			$result = Piwik_FetchAll("
 							SELECT idarchive
 							FROM $numericTable
 							WHERE name LIKE 'done%'
 								AND value = ". Piwik_ArchiveProcessing::DONE_OK_TEMPORARY ."
-								AND ts_archived < ?", array($yesterday));
+								AND ts_archived < ?", array($purgeArchivesOlderThan));
 			
 			$idArchivesToDelete = array();
 			if(!empty($result))
@@ -380,18 +389,21 @@ class Piwik_ArchiveProcessing_Period extends Piwik_ArchiveProcessing
     			Piwik_Query(sprintf($query, $blobTable));
     			Piwik_Query(sprintf($query, $numericTable));
 			}
-			Piwik::log("Purging temporary archives: done [ purged archives older than $yesterday from $blobTable and $numericTable ] [Deleted IDs: ". implode(',',$idArchivesToDelete)."]");
+			Piwik::log("Purging temporary archives: done [ purged archives older than $purgeArchivesOlderThan from $blobTable and $numericTable ] [Deleted IDs: ". implode(',',$idArchivesToDelete)."]");
 			
 			// Deleting "Custom Date Range" reports after 1 day, since they can be re-processed 
 			// and would take up unecessary space
+			$yesterday = Piwik_Date::factory('yesterday')->getDateTime();
     		$query = "DELETE 
     					FROM %s
     					WHERE period = ?
     						AND ts_archived < ?";
 			$bind = array(Piwik::$idPeriods['range'], $yesterday);
+			Piwik::log("Purging Custom Range archives: done [ purged archives older than $yesterday from $blobTable and $numericTable ]");
 			
     		Piwik_Query(sprintf($query, $blobTable), $bind);
     		Piwik_Query(sprintf($query, $numericTable), $bind);
+    		// these tables will be OPTIMIZEd daily in a scheduled task, to claim lost space
 		}
 		else
 		{

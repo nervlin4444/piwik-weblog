@@ -5,7 +5,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 4465 2011-04-15 04:17:43Z matt $
+ * @version $Id: API.php 4603 2011-04-30 00:36:09Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_API
@@ -119,7 +119,7 @@ class Piwik_API_API
 		        'segment' => 'visitIp',
 				'acceptedValues' => '13.54.122.1, etc.',
 		        'sqlSegment' => 'location_ip',
-		        'sqlFilter' => array('Piwik_Common', 'getIp'),
+		        'sqlFilter' => array('Piwik_IP', 'P2N'),
 		        'permission' => Piwik::isUserHasAdminAccess($idSites),
 	    );
 		$segments[] = array(
@@ -312,6 +312,12 @@ class Piwik_API_API
 					unset($availableReport[$attributeName]);
 				}
 			}
+        	// when there are per goal metrics, don't display conversion_rate since it can differ from per goal sum
+	        if(isset($availableReport['metricsGoal']))
+	        {
+	        	unset($availableReport['processedMetrics']['conversion_rate']);
+	        	unset($availableReport['metricsGoal']['conversion_rate']);
+	        }
 			
 			// Processing a uniqueId for each report, 
 			// can be used by UIs as a key to match a given report
@@ -467,8 +473,7 @@ class Piwik_API_API
     	// Display the global Goal metrics 
         if(isset($reportMetadata['metricsGoal']))
         {
-        	$metricsGoalDisplay = array('conversion_rate', 'revenue');
-        	
+        	$metricsGoalDisplay = array('revenue');
     		// Add processed metrics to be displayed for this report
         	foreach($metricsGoalDisplay as $goalMetricId)
         	{
@@ -478,14 +483,7 @@ class Piwik_API_API
         		}
         	}
         }
-        if(isset($reportMetadata['metricsGoal']))
-        {
-        	// To process conversion_rate, we need to apply the Goal processed filter
-        	// only requesting to process the basic metrics
-        	// This adds goal metrics as well as standard metrics
-        	$dataTable->filter('AddColumnsProcessedMetricsGoal', array($enable=true, Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal::GOALS_MINIMAL_REPORT));
-        }
-        elseif(isset($reportMetadata['processedMetrics']))
+        if(isset($reportMetadata['processedMetrics']))
         {
         	// Add processed metrics
         	$dataTable->filter('AddColumnsProcessedMetrics');
@@ -544,14 +542,18 @@ class Piwik_API_API
 	 */
 	private function sort($a, $b)
 	{
-		$order = array(
-			Piwik_Translate('VisitsSummary_VisitsSummary'),
-			Piwik_Translate('Actions_Actions'),
-			Piwik_Translate('Referers_Referers'),
-			Piwik_Translate('Goals_Goals'),
-			Piwik_Translate('General_Visitors'),
-			Piwik_Translate('UserSettings_VisitorSettings'),
-		);
+		static $order = null;
+		if(is_null($order))
+		{
+			$order = array(
+				Piwik_Translate('VisitsSummary_VisitsSummary'),
+				Piwik_Translate('Actions_Actions'),
+				Piwik_Translate('Referers_Referers'),
+				Piwik_Translate('Goals_Goals'),
+				Piwik_Translate('General_Visitors'),
+				Piwik_Translate('UserSettings_VisitorSettings'),
+			);
+		}
 		return ($category = strcmp(array_search($a['category'], $order), array_search($b['category'], $order))) == 0 	
 				?  (@$a['order'] < @$b['order'] ? -1 : 1)
 				: $category;

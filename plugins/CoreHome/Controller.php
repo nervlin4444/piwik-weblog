@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4383 2011-04-09 02:15:01Z matt $
+ * @version $Id: Controller.php 4581 2011-04-28 00:31:40Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CoreHome
@@ -63,7 +63,8 @@ class Piwik_CoreHome_Controller extends Piwik_Controller
 	protected function setDateTodayIfWebsiteCreatedToday()
 	{
 		$date = Piwik_Common::getRequestVar('date', false);
-		if($date == 'today') 
+		if($date == 'today'
+			|| Piwik_Common::getRequestVar('period', false) == 'range') 
 		{
 			return;
 		} 

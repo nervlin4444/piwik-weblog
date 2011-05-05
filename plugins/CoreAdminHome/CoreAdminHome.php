@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: CoreAdminHome.php 3663 2011-01-07 11:28:33Z matt $
+ * @version $Id: CoreAdminHome.php 4582 2011-04-28 00:41:46Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CoreAdminHome
@@ -41,7 +41,7 @@ class Piwik_CoreAdminHome extends Piwik_Plugin
 		$tasks = &$notification->getNotificationObject();
 		$optimizeArchiveTableTask = new Piwik_ScheduledTask ( $this, 
 															'optimizeArchiveTable',
-															new Piwik_ScheduledTime_Monthly() );
+															new Piwik_ScheduledTime_Daily() );
 		$tasks[] = $optimizeArchiveTableTask;
 	}
 	

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: VisitorInterest.php 4392 2011-04-11 00:55:30Z matt $
+ * @version $Id: VisitorInterest.php 4510 2011-04-19 06:58:41Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitorInterest
@@ -51,6 +51,7 @@ class Piwik_VisitorInterest extends Piwik_Plugin
 			'dimension' => Piwik_Translate('VisitorInterest_ColumnVisitDuration'),
 			'metrics' => array( 'nb_visits' ),
 			'processedMetrics' => false,
+			'constantRowsCount' => true,
 			'order' => 15
 		);
 		
@@ -62,6 +63,7 @@ class Piwik_VisitorInterest extends Piwik_Plugin
 			'dimension' => Piwik_Translate('VisitorInterest_ColumnPagesPerVisit'),
 			'metrics' => array( 'nb_visits' ),
 			'processedMetrics' => false,
+			'constantRowsCount' => true,
 			'order' => 20
 		);
 	}

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: HtmlTable.php 2982 2010-08-26 13:16:45Z matt $
+ * @version $Id: HtmlTable.php 4588 2011-04-28 10:48:23Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -160,13 +160,6 @@ class Piwik_ViewDataTable_HtmlTable extends Piwik_ViewDataTable
 	public function addColumnToDisplay( $columnName )
 	{
 		$this->columnsToDisplay[] = $columnName;
-	}
-
-	/**
-	 */
-	public function disableSort()
-	{
-		$this->variablesDefault['enable_sort'] = 'false';
 	}
 
 	/**

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4451 2011-04-14 19:00:39Z vipsoft $
+ * @version $Id: Controller.php 4515 2011-04-19 23:40:14Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CoreAdminHome
@@ -39,7 +39,6 @@ class Piwik_CoreAdminHome_Controller extends Piwik_Controller_Admin
     		$view->showWarningCron = $showWarningCron;
     		$view->todayArchiveTimeToLive = $todayArchiveTimeToLive;
     		$view->enableBrowserTriggerArchiving = $enableBrowserTriggerArchiving;
-    		$view->language = Piwik_LanguagesManager::getLanguageCodeForCurrentUser();
     	
     		if(!Zend_Registry::get('config')->isFileWritable())
     		{
@@ -48,6 +47,7 @@ class Piwik_CoreAdminHome_Controller extends Piwik_Controller_Admin
     		$view->mail = Zend_Registry::get('config')->mail->toArray();
 		}
 		
+    	$view->language = Piwik_LanguagesManager::getLanguageCodeForCurrentUser();
 		$this->setBasicVariablesView($view);
 		$view->topMenu = Piwik_GetTopMenu();
 		$view->menu = Piwik_GetAdminMenu();

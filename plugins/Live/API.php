@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 4463 2011-04-15 03:32:29Z matt $
+ * @version $Id: API.php 4499 2011-04-18 03:05:07Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Live
@@ -305,7 +305,7 @@ class Piwik_Live_API
 			}
 			else
 			{
-				$processedDate = Piwik_Date::factory($date);
+				$processedDate = Piwik_Date::factory($date)->subDay(1);
 				$processedPeriod = Piwik_Period::factory($period, $processedDate); 
 			}
 			$dateStart = $processedPeriod->getDateStart()->setTimezone($currentTimezone);

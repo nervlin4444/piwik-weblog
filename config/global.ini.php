@@ -214,7 +214,7 @@ use_ajax_cdn = 0
 
 ; required AJAX library versions
 jquery_version = 1.5.2
-jqueryui_version = 1.8.11
+jqueryui_version = 1.8.12
 swfobject_version = 2.2
 
 ; Set to 1 if you're using https on your Piwik server and Piwik can't detect it,
@@ -237,6 +237,15 @@ assume_secure_protocol = 0
 ;
 ; de facto standard (X-Forwarded-Host)
 ;proxy_host_headers[] = HTTP_X_FORWARDED_HOST
+
+; List of proxy IP addresses (or IP address ranges) to skip (if present in the above headers).
+; Generally, only required if there's more than one proxy between the visitor and the backend web server.
+;
+; Examples:
+;proxy_ips[] = 204.93.240.*
+;proxy_ips[] = 204.93.177.0/24
+;proxy_ips[] = 199.27.128.0/21
+;proxy_ips[] = 173.245.48.0/20
 
 ; The release server is an essential part of the Piwik infrastructure/ecosystem
 ; to provide the latest software version.
@@ -288,7 +297,7 @@ default_time_one_page_visit = 0
 enable_language_to_country_guess = 1
 
 ; When the misc/cron/archive.sh cron hasn't been setup, we still need to regularly run some maintenance tasks.
-; Visits to the Tracker will try to trigger Scheduled Tasks (eg. scheduled PDF reports by email).
+; Visits to the Tracker will try to trigger Scheduled Tasks (eg. scheduled PDF/HTML reports by email).
 ; Scheduled tasks will only run if 'Enable Piwik Archiving from Browser' is enabled in the General Settings.
 ; Tasks run once every hour maximum, they might not run every hour if traffic is low.
 ; Set to 0 to disable Scheduled tasks completely.
@@ -300,20 +309,25 @@ ignore_visits_cookie_name = piwik_ignore
 ; Comma separated list of variable names that will be read to define a Campaign name, for example CPC campaign
 ; Example: If a visitor first visits 'index.php?piwik_campaign=Adwords-CPC' then it will be counted as a campaign referer named 'Adwords-CPC'
 ; Includes by default the GA style campaign parameters
-campaign_var_name			= "piwik_campaign,utm_campaign,utm_source,utm_medium"
+campaign_var_name			= "pk_campaign,piwik_campaign,utm_campaign,utm_source,utm_medium"
 
 ; Comma separated list of variable names that will be read to track a Campaign Keyword
 ; Example: If a visitor first visits 'index.php?piwik_campaign=Adwords-CPC&piwik_kwd=My killer keyword' ;
 ; then it will be counted as a campaign referer named 'Adwords-CPC' with the keyword 'My killer keyword'
 ; Includes by default the GA style campaign keyword parameter utm_term
-campaign_keyword_var_name	= "piwik_kwd,utm_term"
+campaign_keyword_var_name	= "pk_kwd,piwik_kwd,utm_term"
 
 ; maximum length of a Page Title or a Page URL recorded in the log_action.name table
 page_maximum_length = 1024;
 
-; number of octets in IP address to mask, in order to anonymize a visitor's IP address
-; if the AnonymizeIP plugin is deactivated, this value is ignored
-; for IPv4 addresses, valid values are 0..4
+; Anonymize a visitor's IP address before any tracking heuristics or any plugins can access the visitor's IP address;
+; This value is the number of octets in IP address to mask; if the AnonymizeIP plugin is deactivated, this value is ignored.
+; For IPv4 addresses, valid values are 0..4; for IPv6 addresses, valid values are 0..16
+ip_address_pre_mask_length = 0
+
+; Anonymize a visitor's IP address after tracking heuristics but before storing to DB;
+; This value is the number of octets in IP address to mask; if the AnonymizeIP plugin is deactivated, this value is ignored.
+; For IPv4 addresses, valid values are 0..4; for IPv6 addresses, valid values are 0..16
 ip_address_mask_length = 1
 
 [Segments]

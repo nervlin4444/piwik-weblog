@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Common.php 4481 2011-04-16 17:23:42Z vipsoft $
+ * @version $Id: Common.php 4579 2011-04-27 14:53:24Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -886,135 +886,25 @@ class Piwik_Common
 		}
 		return self::hex2bin($id);
 	}
-/*
- * IP addresses
- */
 
 	/**
-	 * Converts from a numeric representation to a string representation
+	 * Convert IP address (in network address format) to presentation format.
+	 * This is a backward compatibility function for code that only expects
+	 * IPv4 addresses (i.e., doesn't support IPv6).
 	 *
-	 * @param string Long (numeric) representation of IP address
-	 * @return string Dotted IP representation
-	 */
-	static public function long2ip($long)
-	{
-		return long2ip($long);
-	}
-
-	/**
-	 * Convert dotted IP to a stringified integer representation
+	 * @see Piwik_IP::N2P()
 	 *
-	 * @param string $ipStringFrom optional dotted IP address
-	 * @return string IP address as a stringified integer
-	 */
-	static public function getIp( $ipStringFrom = false )
-	{
-		if($ipStringFrom === false)
-		{
-			$ipStringFrom = self::getIpString();
-		}
-
-		// accept ipv4-mapped addresses
-		if(!strncmp($ipStringFrom, '::ffff:', 7))
-		{
-			$ipStringFrom = substr($ipStringFrom, 7);
-		}
-		// Ip is A.B.C.D:54287
-		if(($posColon = strpos($ipStringFrom, ':')) != false
-			&& $posColon > 6)
-		{
-			$ipStringFrom = substr($ipStringFrom, 0, $posColon);
-		}
-		return sprintf("%u", ip2long($ipStringFrom));
-	}
-
-	/**
-	 * Returns the best possible IP of the current user, in the format A.B.C.D
-	 * For example, this could be the proxy client's IP address.
+	 * This function does not support the long (or its string representation)
+	 * returned by the built-in ip2long() function, from Piwik 1.3 and earlier.
 	 *
-	 * @return string ip
-	 */
-	static public function getIpString()
-	{
-		static $clientHeaders = null;
-		if(is_null($clientHeaders))
-		{
-			if(!empty($GLOBALS['PIWIK_TRACKER_MODE']))
-			{
-				$clientHeaders = @Piwik_Tracker_Config::getInstance()->General['proxy_client_headers'];
-			}
-			else
-			{
-				$config = Zend_Registry::get('config');
-				if($config !== false && isset($config->General->proxy_client_headers))
-				{
-					$clientHeaders = $config->General->proxy_client_headers->toArray();
-				}
-			}
-			if(!is_array($clientHeaders))
-			{
-				$clientHeaders = array();
-			}
-		}
-
-		$default = '0.0.0.0';
-		if(isset($_SERVER['REMOTE_ADDR']))
-		{
-			$default = $_SERVER['REMOTE_ADDR'];
-		}
-
-		return self::getProxyFromHeader($default, $clientHeaders);
-	}
-
-	/**
-	 * Returns the proxy
+	 * @deprecated 1.4
 	 *
-	 * @param string $default Default value to return if no matching proxy header
-	 * @param array $proxyHeaders List of proxy headers
+	 * @param string $ip IP address in network address format
 	 * @return string
 	 */
-	static public function getProxyFromHeader($default, $proxyHeaders)
+	static public function long2ip($ip)
 	{
-		// examine proxy headers
-		foreach($proxyHeaders as $proxyHeader)
-		{
-			if(!empty($_SERVER[$proxyHeader]))
-			{
-				$proxyIp = self::getLastElementFromList($_SERVER[$proxyHeader], $default);
-				if(strlen($proxyIp) && stripos($proxyIp, 'unknown') === false)
-				{
-					return $proxyIp;
-				}
-			}
-		}
-
-		return $default;
-	}
-
-	/**
-	 * Returns the last element of a comma separated list
-	 *
-	 * @param string $csv Comma separated list of elements
-	 * @param string $exclude Optional: skip this element, if present
-	 *
-	 * @return string last element after ','
-	 */
-	static public function getLastElementFromList($csv, $exclude = null)
-	{
-		$p = strrpos($csv, ',');
-		if($p !== false)
-		{
-			$elements = explode(',', $csv);
-			for($i = count($elements); $i--; )
-			{
-				$element = trim(self::sanitizeInputValue($elements[$i]));
-				if($exclude === null || $element !== $exclude)
-				{
-					return $element;
-				}
-			}
-		}
-		return trim(self::sanitizeInputValue($csv));
+		return Piwik_IP::long2ip($ip);
 	}
 
 /*

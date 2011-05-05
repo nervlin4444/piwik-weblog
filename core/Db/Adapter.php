@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Adapter.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Adapter.php 4600 2011-04-29 23:06:19Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -42,6 +42,7 @@ class Piwik_Db_Adapter
 		}
 
 		$className = self::getAdapterClassName($adapterName);
+		Piwik_Loader::loadClass($className);
 		$adapter = new $className($dbInfos);
 
 		if($connect)

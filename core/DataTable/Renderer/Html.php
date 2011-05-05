@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Html.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Html.php 4525 2011-04-20 08:28:42Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -151,7 +151,14 @@ class Piwik_DataTable_Renderer_Html extends Piwik_DataTable_Renderer
 					$value = "-";
 					if(isset($row[$name]))
 					{
-						$value = self::formatValueXml($row[$name]);
+						if(is_array($row[$name]))
+						{
+							$value = "<pre>".self::formatValueXml(var_export($row[$name], true)) . "</pre>";
+						}
+						else
+						{
+							$value = self::formatValueXml($row[$name]);
+						}
 					}
 					
 					$html .= "\t\t<td>$value</td>\n";

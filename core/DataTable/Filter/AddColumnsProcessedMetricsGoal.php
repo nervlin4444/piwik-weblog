@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: AddColumnsProcessedMetricsGoal.php 4435 2011-04-13 21:53:31Z matt $
+ * @version $Id: AddColumnsProcessedMetricsGoal.php 4525 2011-04-20 08:28:42Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -61,6 +61,7 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 		parent::filter($table);
 		$roundingPrecision = 2;
 		$expectedColumns = array();
+
 		foreach($table->getRows() as $key => $row)
 		{
 			$currentColumns = $row->getColumns();
@@ -72,11 +73,24 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 			$goals = $this->getColumn($currentColumns, Piwik_Archive::INDEX_GOALS);
 			if($goals)
 			{
-				$revenue = (int)$this->getColumn($currentColumns, Piwik_Archive::INDEX_REVENUE);
-				
+				$revenue = 0;
+				foreach($goals as $goalId => $columnValue)
+				{
+					$revenue += (int)$this->getColumn($columnValue, Piwik_Archive::INDEX_GOAL_REVENUE, Piwik_Archive::$mappingFromIdToNameGoal);
+				}
+
+				if($revenue == 0)
+				{
+					$revenue = (int)$this->getColumn($currentColumns, Piwik_Archive::INDEX_REVENUE);
+				}
 				// If no visit for this metric, but some conversions, we still want to display some kind of "revenue per visit" 
 				// even though it will actually be in this edge case "Revenue per conversion"
-				$revenuePerVisit = round( $revenue / ($nbVisits == 0 ? $conversions : $nbVisits), $roundingPrecision );
+				$revenuePerVisit = $this->invalidDivision;
+				if($nbVisits > 0 
+					|| $conversions > 0)
+				{
+					$revenuePerVisit = round( $revenue / ($nbVisits == 0 ? $conversions : $nbVisits), $roundingPrecision );
+				}
 				$newColumns['revenue_per_visit'] = $revenuePerVisit;
 				
 				if($this->processOnlyIdGoal == self::GOALS_MINIMAL_REPORT)

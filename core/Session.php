@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Session.php 4297 2011-04-03 19:31:58Z vipsoft $
+ * @version $Id: Session.php 4535 2011-04-22 23:36:26Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -43,6 +43,10 @@ class Piwik_Session extends Zend_Session
 		// don't use the default: PHPSESSID
 		$sessionName = defined('PIWIK_SESSION_NAME') ? PIWIK_SESSION_NAME : 'PIWIK_SESSID';
 		@ini_set('session.name', $sessionName);
+
+		// proxies may cause the referer check to fail and
+		// incorrectly invalidate the session
+		@ini_set('session.referer_check', '');
 
 		// we consider these to be misconfigurations, in that
 		//  - user - Piwik doesn't implement user-defined session handler functions

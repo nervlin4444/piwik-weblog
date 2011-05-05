@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: AllColumns.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: AllColumns.php 4525 2011-04-20 08:28:42Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -42,13 +42,22 @@ class Piwik_ViewDataTable_HtmlTable_AllColumns extends Piwik_ViewDataTable_HtmlT
 		{
 			$columnUniqueVisitors = 'nb_uniq_visitors';
 		}
+		
+		// only display conversion rate for the plugins that do not provide "per goal" metrics
+		// otherwise, conversion rate is meaningless as a whole (since we don't process 'cross goals' conversions)
+		$columnConversionRate = false;
+		if(empty($this->viewProperties['show_goals']))
+		{
+			$columnConversionRate = 'conversion_rate';
+		}
 		$this->setColumnsToDisplay(array('label', 
 										'nb_visits', 
 										$columnUniqueVisitors, 
 										'nb_actions_per_visit', 
 										'avg_time_on_site', 
 										'bounce_rate',
-										'conversion_rate'));
+										$columnConversionRate
+										));
 		$this->dataTable->filter('ColumnCallbackReplace', array('avg_time_on_site', create_function('$averageTimeOnSite', 'return Piwik::getPrettyTimeFromSeconds($averageTimeOnSite);')));
 	}
 }

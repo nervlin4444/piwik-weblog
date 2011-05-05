@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Proxy.php 4455 2011-04-14 20:42:15Z matt $
+ * @version $Id: Proxy.php 4580 2011-04-28 00:15:02Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -181,7 +181,8 @@ class Piwik_API_Proxy
 			$_GET = $saveGET;
 			
 			// log the API Call
-			Zend_Registry::get('logger_api_call')->logEvent(
+			try {
+				Zend_Registry::get('logger_api_call')->logEvent(
 								$className,
 								$methodName,
 								$parameterNamesDefaultValues,
@@ -189,6 +190,9 @@ class Piwik_API_Proxy
 								$timer->getTimeMs(),
 								$returnedValue
 							);
+			} catch (Exception $e) {
+				// logger can fail (eg. Tracker request)
+			}
 		} catch(Piwik_Access_NoAccessException $e) {
 			throw $e;
 		}

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Goals.php 4467 2011-04-15 05:10:22Z matt $
+ * @version $Id: Goals.php 4590 2011-04-28 11:00:47Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Goals
@@ -41,10 +41,20 @@ class Piwik_Goals extends Piwik_Plugin
 			'API.getReportMetadata.end' => 'getReportMetadata',
 			'WidgetsList.add' => 'addWidgets',
 			'Menu.add' => 'addMenus',
+			'SitesManager.deleteSite' => 'deleteSiteGoals',
 		);
 		return $hooks;
 	}
 
+	/**
+	 * Delete goals recorded for this site
+	 */
+	function deleteSiteGoals($notification )
+	{
+		$idSite = &$notification->getNotificationObject();
+		Piwik_Query("DELETE FROM ".Piwik_Common::prefixTable('goal') . " WHERE idsite = ? ", array($idSite));
+	}
+	
 	/**
 	 * Returns the Metadata for the Goals plugin API.
 	 * The API returns general Goal metrics: conv, conv rate and revenue globally 

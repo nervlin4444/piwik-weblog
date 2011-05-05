@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Goals.php 4188 2011-03-26 06:45:47Z matt $
+ * @version $Id: Goals.php 4525 2011-04-20 08:28:42Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -46,7 +46,6 @@ class Piwik_ViewDataTable_HtmlTable_Goals extends Piwik_ViewDataTable_HtmlTable
 			'goal_%s_conversion_rate',
 			'goal_%s_revenue_per_visit',
 		
-			'conversion_rate',
 			'revenue_per_visit',
 		));
 		

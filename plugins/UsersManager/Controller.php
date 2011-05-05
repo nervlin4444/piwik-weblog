@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4459 2011-04-15 00:47:11Z matt $
+ * @version $Id: Controller.php 4514 2011-04-19 23:28:50Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UsersManager
@@ -118,7 +118,7 @@ class Piwik_UsersManager_Controller extends Piwik_Controller_Admin
 		if(Piwik::isUserIsSuperUser())
 		{
 			$view->userAlias = $userLogin;
-			$view->userEmail = Zend_Registry::get('config')->superuser->email;
+			$view->userEmail = Piwik::getSuperUserEmail();
 			if(!Zend_Registry::get('config')->isFileWritable())
 			{
 				$view->configFileNotWritable = true;

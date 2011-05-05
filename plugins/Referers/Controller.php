@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4126 2011-03-18 07:29:59Z matt $
+ * @version $Id: Controller.php 4571 2011-04-27 05:40:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Referers
@@ -157,12 +157,12 @@ class Piwik_Referers_Controller extends Piwik_Controller
 											'Referers.getCampaigns',
 											'getKeywordsFromCampaignId'
 								);
-
 		$view->disableExcludeLowPopulation();
 		$view->enableShowGoals();
-		$view->setLimit( 5 );
+		$view->setLimit( 10 );
 		$view->setColumnsToDisplay( array('label','nb_visits') );
 		$view->setColumnTranslation('label', Piwik_Translate('Referers_ColumnCampaign'));
+		$view->setFooterMessage( 'Help: <a target="_blank" href="http://piwik.org/docs/tracking-campaigns/">Tracking Campaigns in Piwik</a> - <a target="_blank" href="http://piwik.org/docs/tracking-campaigns/url-builder/">URL Builder tool</a>');
 		return $this->renderView($view, $fetch);
 	}
 	

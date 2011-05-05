@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: PDFReports.php 4457 2011-04-14 23:59:19Z matt $
+ * @version $Id: PDFReports.php 4512 2011-04-19 21:11:33Z JulienM $
  * 
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
@@ -16,11 +16,13 @@
  */
 class Piwik_PDFReports extends Piwik_Plugin
 {
+	const DEFAULT_FORMAT = 'pdf';
+
 	public function getInformation()
 	{
 		return array(
-			'name' => 'Pdf Export Plugin',
-			'description' => Piwik_Translate('PDFReports_PluginDescription'),
+			'name' => 'Email Reports Plugin',
+			'description' => Piwik_Translate('PDFReports_PluginDescriptionReports'),
 			'author' => 'Piwik',
 			'author_homepage' => 'http://piwik.org/',
 			'version' => Piwik_Version::VERSION,
@@ -147,6 +149,7 @@ class Piwik_PDFReports extends Piwik_Plugin
 					login VARCHAR(100) NOT NULL,
 					description VARCHAR(255) NOT NULL,
 					period VARCHAR(10) NULL,
+					format VARCHAR(10),
 					email_me TINYINT NULL,
 					additional_emails TEXT NULL,
 					reports TEXT NOT NULL,

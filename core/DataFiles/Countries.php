@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Countries.php 4177 2011-03-25 18:05:42Z vipsoft $
+ * @version $Id: Countries.php 4596 2011-04-29 05:12:23Z vipsoft $
  *
  * @category Piwik
  * @package DataFiles
@@ -31,7 +31,6 @@ if(!isset($GLOBALS['Piwik_CountryList']))
 		'ai' => 'amc',
 		'al' => 'eur',
 		'am' => 'asi',
-		'an' => 'amc',
 		'ao' => 'afr',
 		'aq' => 'ant',
 		'ar' => 'ams',
@@ -54,6 +53,7 @@ if(!isset($GLOBALS['Piwik_CountryList']))
 		'bm' => 'amc',
 		'bn' => 'asi',
 		'bo' => 'ams',
+		'bq' => 'amc',
 		'br' => 'ams',
 		'bs' => 'amc',
 		'bt' => 'asi',
@@ -76,6 +76,7 @@ if(!isset($GLOBALS['Piwik_CountryList']))
 		'cr' => 'amc',
 		'cu' => 'amc',
 		'cv' => 'afr',
+		'cw' => 'amc',
 		'cx' => 'asi',
 		'cy' => 'eur',
 		'cz' => 'eur',
@@ -232,6 +233,7 @@ if(!isset($GLOBALS['Piwik_CountryList']))
 		'sr' => 'ams',
 		'st' => 'afr',
 		'sv' => 'amc',
+		'sx' => 'amc',
 		'sy' => 'asi',
 		'sz' => 'afr',
 		'tc' => 'amc',
@@ -290,6 +292,7 @@ if(!isset($GLOBALS['Piwik_CountryList']))
 		'uk' => 'eur', // .uk TLD
 
 		// transitionally reserved
+		'an' => 'amc', // former Netherlands Antilles
 		'bu' => 'asi',
 		'cs' => 'eur', // former Serbia and Montenegro
 		'nt' => 'asi',

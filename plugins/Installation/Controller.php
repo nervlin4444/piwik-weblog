@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4366 2011-04-07 22:07:03Z vipsoft $
+ * @version $Id: Controller.php 4533 2011-04-22 22:05:46Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_Installation
@@ -801,15 +801,6 @@ class Piwik_Installation_Controller extends Piwik_Controller
 			{
 				$infos['multibyte_ok'] = false;
 			}
-		}
-
-		/**
-		 * @see http://php.net/ip2long
-		 */
-		$infos['isIpv4'] = true;
-		if(strpos($_SERVER['REMOTE_ADDR'], ':') !== false)
-		{
-			$infos['isIpv4'] = false;
 		}
 
 		$serverSoftware = isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : '';

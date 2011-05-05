@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Currencies.php 3662 2011-01-07 09:23:16Z matt $
+ * @version $Id: Currencies.php 4596 2011-04-29 05:12:23Z vipsoft $
  *
  * @category Piwik
  * @package DataFiles
@@ -68,6 +68,7 @@ if(!isset($GLOBALS['Piwik_CurrencyList']))
 			'XPF' => array('F', 'CFP franc'),
 			'CUC' => array('$', 'Cuban convertible peso'),
 			'CUP' => array('$', 'Cuban peso'),
+			'CMG' => array('ƒ', 'Curaçao and Sint Maarten guilder'),
 			'CZK' => array('Kč', 'Czech koruna'),
 			'DKK' => array('kr', 'Danish krone'),
 			'DJF' => array('Fr', 'Djiboutian franc'),

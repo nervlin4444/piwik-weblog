@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: UserSettings.php 4392 2011-04-11 00:55:30Z matt $
+ * @version $Id: UserSettings.php 4510 2011-04-19 06:58:41Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UserSettings
@@ -84,7 +84,8 @@ class Piwik_UserSettings extends Piwik_Plugin
     			'UserSettings_WidgetPlugins', 
     			'UserSettings', 
     			'getPlugin', 
-    			'UserSettings_ColumnPlugin'),
+    			'UserSettings_ColumnPlugin',
+		),
 		
 		array( 	'UserSettings_VisitorSettings', 
 				'UserSettings_WidgetWidescreen', 
@@ -157,6 +158,8 @@ class Piwik_UserSettings extends Piwik_Plugin
     			);
     			// There is no processedMetrics for this report
 				$report['processedMetrics'] = array();
+				// Always has same number of rows, 1 per plugin
+    			$report['constantRowsCount'] = true;
     		}
     		$reports[] = $report;
 		}

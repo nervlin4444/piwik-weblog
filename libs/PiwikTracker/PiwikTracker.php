@@ -11,7 +11,7 @@
  *  - CURL or STREAM extensions (to issue the request to Piwik)
  *  
  * @license released under BSD License http://www.opensource.org/licenses/bsd-license.php
- * @version $Id: PiwikTracker.php 4447 2011-04-14 04:28:07Z matt $
+ * @version $Id: PiwikTracker.php 4508 2011-04-19 03:26:04Z matt $
  * @link http://piwik.org/docs/tracking-api/
  *
  * @category Piwik
@@ -148,9 +148,50 @@ class PiwikTracker
      */
     public function setCustomVariable($id, $name, $value)
     {
+    	if(!is_int($id))
+    	{
+    		throw new Exception("Parameter id to setCustomVariable should be an integer");
+    	}
         $this->visitorCustomVar[$id] = array($name, $value);
     }
-
+    
+    /**
+     * Returns the currently assigned Custom Variable stored in a first party cookie.
+     * 
+     * This function will only work if the user is initiating the current request, and his cookies
+     * can be read by PHP from the $_COOKIE array.
+     * 
+     * @param int Custom Variable integer index to fetch from cookie. Should be a value from 1 to 5
+     * @return array An array with this format: array( 0 => CustomVariableName, 1 => CustomVariableValue )
+     * @see Piwik.js getCustomVariable()
+     */
+    public function getCustomVariable($id)
+    {
+    	if(!empty($this->visitorCustomVar[$id]))
+    	{
+    		return $this->visitorCustomVar[$id];
+    	}
+    	$customVariablesCookie = 'cvar.'.$this->idSite.'.';
+    	$cookie = $this->getCookieMatchingName($customVariablesCookie);
+    	if(!$cookie)
+    	{
+    		return false;
+    	}
+    	if(!is_int($id))
+    	{
+    		throw new Exception("Parameter to getCustomVariable should be an integer");
+    	}
+    	$cookieDecoded = json_decode($cookie, $assoc = true);
+    	if(!is_array($cookieDecoded)
+    		|| !isset($cookieDecoded[$id])
+    		|| !is_array($cookieDecoded[$id])
+    		|| count($cookieDecoded[$id]) != 2)
+    	{
+    		return false;
+    	}
+    	return $cookieDecoded[$id];
+    }
+    
     /**
      * Sets the Browser language. Used to guess visitor countries when GeoIP is not enabled
      * 

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Piwik.php 4472 2011-04-15 06:28:56Z matt $
+ * @version $Id: Piwik.php 4580 2011-04-28 00:15:02Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -50,7 +50,7 @@ class Piwik
 /*
  * Prefix/unprefix class name
  */
-
+	
 	/**
 	 * Prefix class name (if needed)
 	 *
@@ -124,6 +124,28 @@ class Piwik
 		Piwik_View::clearCompiledTemplates();
 		Piwik_Common::deleteTrackerCache();
 	}
+	
+	/**
+	 * Returns the cached the Piwik URL, eg. http://demo.piwik.org/ or http://example.org/piwik/ 
+	 * If not found, then tries to cache it and returns the value.
+	 * @return string
+	 */
+	static public function getPiwikUrl()
+	{
+		$key = 'piwikUrl';
+		$url = Piwik_GetOption($key);
+		if(empty($url)
+			&& !Piwik_Common::isPhpCliMode())
+		{
+			$url = Piwik_Common::sanitizeInputValue(Piwik_Url::getCurrentUrlWithoutFileName());
+			if(strlen($url) >= strlen('http://a/'))
+			{
+				Piwik_SetOption($key, $url, $autoload = true);
+			}
+		}
+		return $url;
+	}
+	
 	
 /*
  * HTTP headers
@@ -901,6 +923,14 @@ class Piwik
 						  ( Zend_Registry::get('config')->log->log_only_when_debug_parameter == 0
 						  	|| isset($_REQUEST['debug']))
 						;
+			// It is possible that the logger is not setup:
+			// - Tracker request, and debug disabled, 
+			// - and some scheduled tasks call code that tries and log something  
+			try {
+				Zend_Registry::get('logger_message');
+			} catch(Exception $e) {
+				$shouldLog = false;
+			}
 		}
 		if($shouldLog)
 		{
@@ -1435,10 +1465,20 @@ class Piwik
 			$user = Piwik_UsersManager_API::getInstance()->getUser(Piwik::getCurrentUserLogin());
 			return $user['email'];
 		}
+		return self::getSuperUserEmail();
+	}
+
+	/**
+	 * Returns Super User email
+	 * 
+	 * @return string
+	 */
+	static public function getSuperUserEmail()
+	{
 		$superuser = Zend_Registry::get('config')->superuser;
 		return $superuser->email;
 	}
-
+	
 	/**
 	 * Get current user login
 	 *
@@ -2096,7 +2136,7 @@ class Piwik
 			$filePath = PIWIK_USER_PATH . '/' . Piwik_AssetManager::MERGED_FILE_DIR . $tableName . '-'.Piwik_Common::generateUniqId().'.csv';
 
 			if (Piwik_Common::isWindows()) {
-				// On windows, MySQL expects slashes as directory separators
+				// On Windows, MySQL expects forward slashes as directory separators
 				$filePath = str_replace('\\', '/', $filePath);
 			}
 
@@ -2171,10 +2211,9 @@ class Piwik
 			// @see http://bugs.php.net/bug.php?id=54158
 			try {
 				$result = @Piwik_Exec('LOAD DATA LOCAL INFILE'.$query);
-				if(empty($result)) {
+				if(empty($result) || $result < 0) {
 					throw new Exception("LOAD DATA LOCAL INFILE failed!");
 				}
-
 				unlink($filePath);
 				return true;
 			} catch(Exception $e) {
@@ -2197,7 +2236,7 @@ class Piwik
 			}
 
 			$result = @Piwik_Exec('LOAD DATA INFILE'.$query);
-			if(empty($result)) {
+			if(empty($result) || $result < 0) {
 				throw new Exception("LOAD DATA INFILE failed!");
 			}
 
@@ -2226,13 +2265,9 @@ class Piwik
 	static public function tableInsertBatchIterate($tableName, $fields, $values, $ignoreWhenDuplicate = true)
 	{
 		$fieldList = '('.join(',', $fields).')';
+		$ignore = $ignoreWhenDuplicate ? 'IGNORE' : '';
 
-		$ignore = '';
-		if($ignoreWhenDuplicate) {
-			$ignore = ' IGNORE ';
-		}
 		foreach($values as $row) {
-			$toRecord = implode(', ', $row);
 			$query = "INSERT $ignore
 					INTO ".$tableName."
 					$fieldList

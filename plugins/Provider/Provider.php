@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Provider.php 4409 2011-04-11 20:54:07Z matt $
+ * @version $Id: Provider.php 4533 2011-04-22 22:05:46Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Provider
@@ -213,16 +213,15 @@ class Piwik_Provider extends Piwik_Plugin
 	}
 	
 	/**
-	 * Returns the hostname given the string IP in the format ip2long
-	 * php.net/ip2long
+	 * Returns the hostname given the internal representation of the
+	 * IP address
 	 * 
-	 * @param string $ip
-	 * 
-	 * @return string hostname
+	 * @param string $ip Internal representation of IP address in binary-safe string
+	 * @return string hostname (or human-readable IP address)
 	 */
 	private function getHost($ip)
 	{
-		return trim(strtolower(@gethostbyaddr(Piwik_Common::long2ip($ip))));
+		return trim(strtolower(@Piwik_IP::getHostByAddr(Piwik_IP::N2P($ip))));
 	}
 
 	static public function headerUserCountry($notification)

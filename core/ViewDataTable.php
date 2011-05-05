@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ViewDataTable.php 4311 2011-04-04 18:49:55Z vipsoft $
+ * @version $Id: ViewDataTable.php 4588 2011-04-28 10:48:23Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -412,6 +412,12 @@ abstract class Piwik_ViewDataTable
 			// Second, generic filters (Sort, Limit, Replace Column Names, etc.)
 			$requestString = $this->getRequestString();
 			$request = Piwik_API_Request::getRequestArrayFromString($requestString);
+			
+			if(!empty($this->variablesDefault['enable_sort']) 
+				&& $this->variablesDefault['enable_sort'] === 'false')
+			{
+				$request['filter_sort_column'] = $request['filter_sort_order'] = ''; 
+			}
 			$genericFilter = new Piwik_API_DataTableGenericFilter($request);
 			$genericFilter->filter($this->dataTable);
 		}
@@ -747,6 +753,14 @@ abstract class Piwik_ViewDataTable
 		$this->viewProperties['show_search'] = false;
 	}
 
+	/**
+	 * Do not sort this table, leave it as it comes out of the API
+	 */
+	public function disableSort()
+	{
+		$this->variablesDefault['enable_sort'] = 'false';
+	}
+	
 	/**
 	 * Do not show the footer icons (show all columns icon, "plus" icon)
 	 */

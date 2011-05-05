@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: piwik.php 4325 2011-04-05 07:43:11Z matt $
+ * @version $Id: piwik.php 4599 2011-04-29 17:08:49Z vipsoft $
  *
  * @package Piwik
  */
@@ -12,15 +12,17 @@ $GLOBALS['PIWIK_TRACKER_DEBUG'] = false;
 $GLOBALS['PIWIK_TRACKER_DEBUG_FORCE_SCHEDULED_TASKS'] = false;
 define('PIWIK_ENABLE_TRACKING', true);
 
-if(file_exists('bootstrap.php'))
+define('PIWIK_DOCUMENT_ROOT', dirname(__FILE__)=='/'?'':dirname(__FILE__));
+if(file_exists(PIWIK_DOCUMENT_ROOT . '/bootstrap.php'))
 {
-	require_once 'bootstrap.php';
+	require_once PIWIK_DOCUMENT_ROOT . '/bootstrap.php';
 }
+
 $GLOBALS['PIWIK_TRACKER_MODE'] = true;
 error_reporting(E_ALL|E_NOTICE);
 @ini_set('xdebug.show_exception_trace', 0);
+@ini_set('magic_quotes_runtime', 0);
 
-define('PIWIK_DOCUMENT_ROOT', dirname(__FILE__)=='/'?'':dirname(__FILE__));
 if(!defined('PIWIK_USER_PATH'))
 {
 	define('PIWIK_USER_PATH', PIWIK_DOCUMENT_ROOT);
@@ -38,6 +40,7 @@ require_once PIWIK_INCLUDE_PATH .'/libs/Event/Notification.php';
 require_once PIWIK_INCLUDE_PATH .'/core/PluginsManager.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Plugin.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Common.php';
+require_once PIWIK_INCLUDE_PATH .'/core/IP.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Config.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Db.php';
@@ -50,6 +53,11 @@ require_once PIWIK_INCLUDE_PATH .'/core/Cookie.php';
 
 session_cache_limiter('nocache');
 @date_default_timezone_set('UTC');
+
+if(!defined('PIWIK_ENABLE_TRACKING') || PIWIK_ENABLE_TRACKING)
+{
+	ob_start();
+}
 if($GLOBALS['PIWIK_TRACKER_DEBUG'] === true)
 {	
 	require_once PIWIK_INCLUDE_PATH .'/core/Loader.php';
@@ -71,7 +79,6 @@ if($GLOBALS['PIWIK_TRACKER_DEBUG'] === true)
 
 if(!defined('PIWIK_ENABLE_TRACKING') || PIWIK_ENABLE_TRACKING)
 {
-	ob_start();
 	$process = new Piwik_Tracker();
 	$process->main();
 	ob_end_flush();

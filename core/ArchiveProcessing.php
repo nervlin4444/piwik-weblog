@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ArchiveProcessing.php 4341 2011-04-06 03:56:38Z matt $
+ * @version $Id: ArchiveProcessing.php 4587 2011-04-28 06:24:46Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -713,31 +713,30 @@ abstract class Piwik_ArchiveProcessing
 			return ;
 		}
 		$bindSql = $this->getBindArray();
-		$count = count($bindSql);
 		$values = array();
-		$table = null;
+
 		foreach($records as $record)
 		{
+			// don't record zero
 			if(empty($record[1])) continue;
+
 			$bind = $bindSql;
-			$bind[] = $record[0];
-			$bind[] = $record[1];
+			$bind[] = $record[0]; // name
+			$bind[] = $record[1]; // value
 			$values[] = $bind;
 			
 		}
 		if(empty($values)) return ;
 		
-		if(is_null($table))
+		if(is_numeric($record[1]))
 		{
-			if(is_numeric($record[1]))
-			{
-				$table = $this->tableArchiveNumeric;
-			}
-			else
-			{
-				$table = $this->tableArchiveBlob;
-			}
+			$table = $this->tableArchiveNumeric;
 		}
+		else
+		{
+			$table = $this->tableArchiveBlob;
+		}
+
 		Piwik::tableInsertBatch($table->getTableName(), $this->getInsertFields(), $values);
 		return true;
 	}
@@ -766,11 +765,11 @@ abstract class Piwik_ArchiveProcessing
 		// table to use to save the data
 		if(is_numeric($value))
 		{
-    		// We choose not to record records with a value of 0 
-    		if($value == 0)
-    		{
-    			return;
-    		}
+			// We choose not to record records with a value of 0 
+			if($value == 0)
+			{
+				return;
+			}
 			$table = $this->tableArchiveNumeric;
 		}
 		else
@@ -902,11 +901,12 @@ abstract class Piwik_ArchiveProcessing
 		{
 			return false;
 		}
-		if(!self::isBrowserTriggerArchivingEnabled()
-			&& !Piwik_Common::isPhpCliMode())
-		{
-			return true;
-		}
-		return false;
+		return !$this->isRequestAuthorizedToArchive();
+	}
+	
+	protected function isRequestAuthorizedToArchive()
+	{
+		return self::isBrowserTriggerArchivingEnabled()
+				|| Piwik_Common::isPhpCliMode();
 	}
 }

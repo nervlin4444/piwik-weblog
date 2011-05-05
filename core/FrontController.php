@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: FrontController.php 4471 2011-04-15 06:13:16Z matt $
+ * @version $Id: FrontController.php 4553 2011-04-26 04:46:03Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -236,7 +236,13 @@ class Piwik_FrontController
 
 			Piwik_PluginsManager::getInstance()->installLoadedPlugins();
 			Piwik::install();
-
+			
+			// ensure the current Piwik URL is known for later use
+			if(method_exists('Piwik', 'getPiwikUrl'))
+			{
+				$host = Piwik::getPiwikUrl();
+			}
+			
 			Piwik_PostEvent('FrontController.initAuthenticationObject');
 			try {
 				$authAdapter = Zend_Registry::get('auth');

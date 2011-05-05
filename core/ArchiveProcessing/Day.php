@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Day.php 4465 2011-04-15 04:17:43Z matt $
+ * @version $Id: Day.php 4525 2011-04-20 08:28:42Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -574,12 +574,14 @@ class Piwik_ArchiveProcessing_Day extends Piwik_ArchiveProcessing
 		{
 			if(isset($values[Piwik_Archive::INDEX_GOALS]))
 			{
-				$revenue = $conversions = $nbVisitsConverted = 0;
+				// When per goal metrics are processed, general 'visits converted' is not meaningful because
+				// it could differ from the sum of each goal conversions
+				unset($values[Piwik_Archive::INDEX_NB_VISITS_CONVERTED]);
+				$revenue = $conversions = 0;
 				foreach($values[Piwik_Archive::INDEX_GOALS] as $idgoal => $goalValues)
 				{
 					$revenue += $goalValues[Piwik_Archive::INDEX_GOAL_REVENUE];
 					$conversions += $goalValues[Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS];
-					$nbVisitsConverted += $goalValues[Piwik_Archive::INDEX_GOAL_NB_VISITS_CONVERTED];
 				}
 				$values[Piwik_Archive::INDEX_NB_CONVERSIONS] = $conversions;
 				$values[Piwik_Archive::INDEX_REVENUE] = $revenue;

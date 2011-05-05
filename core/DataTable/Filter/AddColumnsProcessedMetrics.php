@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: AddColumnsProcessedMetrics.php 4435 2011-04-13 21:53:31Z matt $
+ * @version $Id: AddColumnsProcessedMetrics.php 4525 2011-04-20 08:28:42Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -45,17 +45,13 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetrics extends Piwik_DataTable_
 				$rowsIdToDelete[] = $key;
 				continue;
 			}
-				
+			
 			$nbVisitsConverted = (int)$this->getColumn($row, Piwik_Archive::INDEX_NB_VISITS_CONVERTED);
-			if($nbVisitsConverted == 0)
-			{
-				$conversionRate = $this->invalidDivision;
-			}
-			else
+			if($nbVisitsConverted != 0)
 			{
 				$conversionRate = round(100 * $nbVisitsConverted / $nbVisits, $this->roundPrecision);
+				$row->addColumn('conversion_rate', $conversionRate."%");
 			}
-			$row->addColumn('conversion_rate', $conversionRate."%");
 			
 			if($nbVisits == 0)
 			{

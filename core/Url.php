@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Url.php 4311 2011-04-04 18:49:55Z vipsoft $
+ * @version $Id: Url.php 4539 2011-04-23 05:56:56Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -167,18 +167,15 @@ class Piwik_Url
 	 */
 	static public function getCurrentHost($default = 'unknown')
 	{
-		static $hostHeaders = null;
-		if(is_null($hostHeaders))
+		$hostHeaders = null;
+		$config = Zend_Registry::get('config');
+		if($config !== false && $config->General->proxy_host_headers)
 		{
-			$config = Zend_Registry::get('config');
-			if($config !== false && isset($config->General->proxy_host_headers))
-			{
-				$hostHeaders = $config->General->proxy_host_headers->toArray();
-			}
-			if(!is_array($hostHeaders))
-			{
-				$hostHeaders = array();
-			}
+			$hostHeaders = $config->General->proxy_host_headers->toArray();
+		}
+		if(!is_array($hostHeaders))
+		{
+			$hostHeaders = array();
 		}
 
 		$default = Piwik_Common::sanitizeInputValue($default);
@@ -189,12 +186,12 @@ class Piwik_Url
 		}
 
 		// temporary workaround for #1331
-		if(!method_exists('Piwik_Common', 'getProxyFromHeader'))
+		if(!method_exists('Piwik_IP', 'getNonProxyIpFromHeader'))
 		{
 			return $default;
 		}
 
-		return Piwik_Common::getProxyFromHeader($default, $hostHeaders);
+		return Piwik_IP::getNonProxyIpFromHeader($default, $hostHeaders);
 	}
 
 	/**

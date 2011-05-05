@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 4366 2011-04-07 22:07:03Z vipsoft $
+ * @version $Id: Controller.php 4533 2011-04-22 22:05:46Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_Feedback
@@ -62,7 +62,7 @@ class Piwik_Feedback_Controller extends Piwik_Controller
 			$mail->setSubject('[ Feedback form - Piwik ] ' . $category);
 			$mail->setBodyText(Piwik_Common::unsanitizeInputValue($body) . "\n"
 				. 'Piwik ' . Piwik_Version::VERSION . "\n"
-				. 'IP: ' . Piwik_Common::getIpString() . "\n"
+				. 'IP: ' . Piwik_IP::getIpFromHeader() . "\n"
 				. 'URL: ' . Piwik_Url::getReferer() . "\n");
 			@$mail->send();
 		}

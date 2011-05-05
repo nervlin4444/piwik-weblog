@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Visitor.php 4467 2011-04-15 05:10:22Z matt $
+ * @version $Id: Visitor.php 4533 2011-04-22 22:05:46Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_Live
@@ -131,7 +131,7 @@ class Piwik_Live_Visitor
 	{
 		if(isset($this->details['location_ip']))
 		{
-			return Piwik_Common::long2ip($this->details['location_ip']);
+			return Piwik_IP::N2P($this->details['location_ip']);
 		}
 		return false;
 	}
